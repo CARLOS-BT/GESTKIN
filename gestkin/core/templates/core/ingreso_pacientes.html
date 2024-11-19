@@ -2,160 +2,78 @@
 {% load static %}
 
 {% block content %}
-<div class="container mt-4">
-    <!-- Header con información del médico y asistente -->
+<div class="container mt-5">
+    <!-- Encabezado de Médico y Asistente -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="text-muted">
-            <p class="mb-0">Médico: {{ medico }}</p>
-            <p class="mb-0">Asistente: {{ asistente }}</p>
+        <div>
+            <p class="mb-0"><strong>Médico:</strong> Dra. Laura Rodríguez</p>
+            <p class="mb-0"><strong>Asistente:</strong> Daniela Sanhueza</p>
         </div>
         <a href="{% url 'logout' %}" class="btn btn-danger">
             <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
         </a>
     </div>
 
-    <!-- Formulario de ingreso -->
-    <div class="card">
-        <div class="card-body">
-            <h2 class="text-center text-primary mb-4">Ingreso de Paciente</h2>
+    <!-- Título -->
+    <h2 class="text-center text-primary mb-4">Ingreso de Paciente</h2>
 
-            <form method="post" class="needs-validation" novalidate>
-                {% csrf_token %}
-                
-                <!-- Primera fila: Nombre, Apellido, RUT -->
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <label for="nombre" class="form-label">Nombre del Paciente</label>
-                        <input type="text" class="form-control" id="nombre" name="nombre" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label for="apellido" class="form-label">Apellido del Paciente</label>
-                        <input type="text" class="form-control" id="apellido" name="apellido" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label for="rut" class="form-label">RUT</label>
-                        <input type="text" class="form-control" id="rut" name="rut" required>
-                    </div>
-                </div>
-
-                <!-- Segunda fila: Cantidad de Sesiones, Fecha de Inicio, Hora de Cita -->
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <label for="cantidad_sesiones" class="form-label">Cantidad de Sesiones</label>
-                        <input type="number" class="form-control" id="cantidad_sesiones" name="cantidad_sesiones" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label for="fecha_inicio" class="form-label">Fecha de Inicio</label>
-                        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label for="hora_cita" class="form-label">Hora de la Cita</label>
-                        <input type="time" class="form-control" id="hora_cita" name="hora_cita" required>
-                    </div>
-                </div>
-
-                <!-- Patología -->
-                <div class="mb-3">
-                    <label for="patologia" class="form-label">Patología</label>
-                    <textarea class="form-control" id="patologia" name="patologia" rows="3"></textarea>
-                </div>
-
-                <!-- Observaciones -->
-                <div class="mb-3">
-                    <label for="observaciones" class="form-label">Observaciones</label>
-                    <textarea class="form-control" id="observaciones" name="observaciones" rows="3"></textarea>
-                </div>
-
-                <!-- Botones de acción -->
-                <div class="d-flex justify-content-between">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Agregar Paciente
-                    </button>
-                    <a href="{% url 'lista_pacientes' %}" class="btn btn-success">
-                        <i class="fas fa-list"></i> Ver Lista de Pacientes
-                    </a>
-                </div>
-            </form>
+    <!-- Formulario -->
+    <form method="post" class="needs-validation">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                {{ form.nombre.label_tag }}
+                {{ form.nombre }}
+            </div>
+            <div class="col-md-4 mb-3">
+                {{ form.apellido.label_tag }}
+                {{ form.apellido }}
+            </div>
+            <div class="col-md-4 mb-3">
+                {{ form.rut.label_tag }}
+                {{ form.rut }}
+            </div>
         </div>
-    </div>
+
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                {{ form.cantidad_sesiones.label_tag }}
+                {{ form.cantidad_sesiones }}
+            </div>
+            <div class="col-md-3 mb-3">
+                {{ form.fecha_inicio.label_tag }}
+                {{ form.fecha_inicio }}
+            </div>
+            <div class="col-md-3 mb-3">
+                {{ form.fecha_termino.label_tag }}
+                {{ form.fecha_termino }}
+            </div>
+            <div class="col-md-3 mb-3">
+                {{ form.hora_cita.label_tag }}
+                {{ form.hora_cita }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                {{ form.patologia.label_tag }}
+                {{ form.patologia }}
+            </div>
+            <div class="col-md-6 mb-3">
+                {{ form.observaciones.label_tag }}
+                {{ form.observaciones }}
+            </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="d-flex justify-content-between mt-4">
+            <button type="submit" class="btn btn-primary">Agregar Paciente</button>
+            <a href="{% url 'lista_pacientes' %}" class="btn btn-success">Ver Lista de Pacientes</a>
+        </div>
+    </form>
 </div>
 
-<!-- Estilos específicos para la página -->
-<style>
-    .card {
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        border: none;
-        border-radius: 0.5rem;
-    }
-
-    .form-control {
-        border-radius: 0.25rem;
-    }
-
-    .form-control:focus {
-        border-color: #80bdff;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    }
-
-    .btn {
-        padding: 0.5rem 1.5rem;
-        border-radius: 0.25rem;
-    }
-
-    .btn-primary {
-        background-color: #0d6efd;
-        border-color: #0d6efd;
-    }
-
-    .btn-success {
-        background-color: #198754;
-        border-color: #198754;
-    }
-</style>
-
-<!-- Scripts específicos para la página -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Validación del formulario
-    const form = document.querySelector('.needs-validation');
-    form.addEventListener('submit', function(event) {
-        if (!form.checkValidity()) {
-            event.preventDefault();
-            event.stopPropagation();
-        }
-        form.classList.add('was-validated');
-    });
-
-    // Cálculo automático de fecha de término
-    const cantidadSesionesInput = document.getElementById('cantidad_sesiones');
-    const fechaInicioInput = document.getElementById('fecha_inicio');
-    
-    function calcularFechaTermino() {
-        const cantidadSesiones = parseInt(cantidadSesionesInput.value);
-        const fechaInicio = new Date(fechaInicioInput.value);
-        
-        if (cantidadSesiones && fechaInicio) {
-            let diasHabiles = cantidadSesiones - 1;
-            let fechaActual = new Date(fechaInicio);
-            let diasAgregados = 0;
-            
-            while (diasAgregados < diasHabiles) {
-                fechaActual.setDate(fechaActual.getDate() + 1);
-                if (fechaActual.getDay() !== 0 && fechaActual.getDay() !== 6) {
-                    diasAgregados++;
-                }
-            }
-            
-            // Mostrar la fecha de término calculada
-            const fechaTerminoElement = document.getElementById('fecha_termino');
-            if (fechaTerminoElement) {
-                fechaTerminoElement.textContent = fechaActual.toLocaleDateString();
-            }
-        }
-    }
-
-    cantidadSesionesInput.addEventListener('change', calcularFechaTermino);
-    fechaInicioInput.addEventListener('change', calcularFechaTermino);
-});
-</script>
+<footer class="text-center mt-4">
+    Gestión de Pacientes © 2024
+</footer>
 {% endblock %}

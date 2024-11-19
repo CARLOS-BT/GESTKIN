@@ -24,7 +24,7 @@ from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
     path('', views.login_view, name='login'),  # Página de inicio de sesión
-    path('pacientes/', views.lista_pacientes, name='lista_pacientes'),  # Listado de pacientes
+    path('lista-pacientes/', views.lista_pacientes, name='lista_pacientes'),  # Lista para confirmar los datos
     path('historial/', views.historial_pacientes, name='historial_pacientes'),  # Historial de pacientes
     path('ingreso-pacientes/', views.ingreso_pacientes, name='ingreso_pacientes'),  # Ingreso de pacientes
     path('usuarios/', views.admin_usuarios, name='admin_usuarios'),  # Gestión de usuarios
@@ -32,4 +32,3 @@ urlpatterns = [
     path('inicio/', views.login_view, name='inicio'),  # Agregar la ruta /inicio
     path('logout/', LogoutView.as_view(), name='logout'),  # Ruta para cerrar sesión
 ]
-

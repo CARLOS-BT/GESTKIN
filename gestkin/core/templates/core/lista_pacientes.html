@@ -1,12 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista de Pacientes</title>
-</head>
-<body>
-    <h1>Lista de Pacientes</h1>
-    <p>Esta es una página de ejemplo para listar pacientes.</p>
-</body>
-</html>
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center text-primary mb-4">Listado de Pacientes</h2>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>RUT</th>
+                <th>Sesiones</th>
+                <th>Inicio</th>
+                <th>Término</th>
+                <th>Patología</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for paciente in pacientes %}
+            <tr>
+                <td>{{ paciente.nombre }}</td>
+                <td>{{ paciente.apellido }}</td>
+                <td>{{ paciente.rut }}</td>
+                <td>{{ paciente.cantidad_sesiones }}</td>
+                <td>{{ paciente.fecha_inicio }}</td>
+                <td>{{ paciente.fecha_termino }}</td>
+                <td>{{ paciente.patologia }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">No hay pacientes registrados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
