@@ -37,8 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'gestkin.core',
+    'gestkin.core',  # Usa la ruta completa para registrar la aplicación
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -55,7 +56,7 @@ ROOT_URLCONF = 'gestkin.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'core/templates'],  # Ruta a las plantillas
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -67,7 +68,6 @@ TEMPLATES = [
         },
     },
 ]
-
 
 WSGI_APPLICATION = 'gestkin.wsgi.application'
 
