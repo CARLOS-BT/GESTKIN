@@ -66,3 +66,6 @@ def historial_pacientes(request):
 
 def admin_usuarios(request):
     return render(request, 'core/admin_usuarios.html')
+
+def ingreso_pacientes(request):
+    return render(request, 'core/ingreso_pacientes.html')  # Asegúrate de que este sea el nombre correcto

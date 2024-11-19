@@ -16,9 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from gestkin.core import views
+from gestkin.core import views
+from django.contrib import admin
+from django.contrib.auth.views import LogoutView
+
 
 urlpatterns = [
-    path('admin/', admin.site.urls),  # Administración
-    path('', include('gestkin.core.urls')),  # Usa el nombre completo del módulo
-
+    path('', views.login_view, name='login'),  # Página de inicio de sesión
+    path('pacientes/', views.lista_pacientes, name='lista_pacientes'),  # Listado de pacientes
+    path('historial/', views.historial_pacientes, name='historial_pacientes'),  # Historial de pacientes
+    path('ingreso-pacientes/', views.ingreso_pacientes, name='ingreso_pacientes'),  # Ingreso de pacientes
+    path('usuarios/', views.admin_usuarios, name='admin_usuarios'),  # Gestión de usuarios
+    path('admin/', admin.site.urls),  # Admin panel
+    path('inicio/', views.login_view, name='inicio'),  # Agregar la ruta /inicio
+    path('logout/', LogoutView.as_view(), name='logout'),  # Ruta para cerrar sesión
 ]
+

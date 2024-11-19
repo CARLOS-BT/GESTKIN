@@ -38,8 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'gestkin.core',  # Usa la ruta completa para registrar la aplicación
-]
-
+    ##'core',
+    ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gestión de Pacientes{% endblock %}</title>
+    {% load static %}
+    <!-- Agrega tus estilos y scripts aquí -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <!-- Encabezado -->
+    <header>
+        <nav>
+            <a href="{% url 'login' %}">Inicio</a>
+            <a href="{% url 'lista_pacientes' %}">Pacientes</a>
+            <a href="{% url 'ingreso_pacientes' %}">Agregar Paciente</a>
+            <a href="{% url 'admin_usuarios' %}">Usuarios</a>
+        </nav>
+    </header>
+
+    <!-- Contenido dinámico -->
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Pie de página -->
+    <footer>
+        <p>Gestión de Pacientes &copy; 2024</p>
+    </footer>
+</body>
+</html>
