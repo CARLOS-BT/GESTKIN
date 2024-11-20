@@ -31,4 +31,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),  # Admin panel
     path('inicio/', views.login_view, name='inicio'),  # Agregar la ruta /inicio
     path('logout/', LogoutView.as_view(), name='logout'),  # Ruta para cerrar sesión
+    path('editar-paciente/<int:id>/', views.editar_paciente, name='editar_paciente'),
 ]

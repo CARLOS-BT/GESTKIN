@@ -2,6 +2,74 @@
 {% load static %}
 
 {% block content %}
+<style>
+    /* Fondo degradado armonioso */
+    body {
+        background: linear-gradient(to bottom, #e3f2fd, #ffffff);
+        min-height: 100vh;
+    }
+
+    /* Contenedor principal */
+    .container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+    }
+
+    /* Botones */
+    .btn-primary {
+        background-color: #1976d2; /* Azul oscuro */
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background-color: #1565c0; /* Azul más oscuro */
+    }
+
+    .btn-success {
+        background-color: #43a047; /* Verde */
+        border: none;
+    }
+
+    .btn-success:hover {
+        background-color: #388e3c; /* Verde más oscuro */
+    }
+
+    .btn-danger {
+        background-color: #e53935; /* Rojo */
+        border: none;
+    }
+
+    .btn-danger:hover {
+        background-color: #c62828; /* Rojo más oscuro */
+    }
+
+    /* Título */
+    h2 {
+        font-family: 'Arial', sans-serif;
+        font-weight: bold;
+    }
+
+    /* Tabla */
+    table.table {
+        margin-top: 2rem;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    table.table th {
+        background-color: #1976d2;
+        color: white;
+        text-align: center;
+    }
+
+    table.table td {
+        text-align: center;
+    }
+</style>
+
 <div class="container mt-5">
     <!-- Encabezado de Médico y Asistente -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -73,7 +141,35 @@
     </form>
 </div>
 
+<!-- Tabla de Pacientes -->
+<div class="container mt-5">
+    <h3 class="text-center text-primary mb-4">Lista de Pacientes</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>RUT</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Itera sobre los pacientes -->
+            {% for paciente in pacientes %}
+            <tr>
+                <td>{{ paciente.nombre }}</td>
+                <td>{{ paciente.apellido }}</td>
+                <td>{{ paciente.rut }}</td>
+                <td>
+                    <a href="{% url 'editar_paciente' paciente.id %}" class="btn btn-primary btn-sm">Editar</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
 <footer class="text-center mt-4">
-    Gestión de Pacientes © 2024
+    Sistema GESTKIN © 2024 Carlos Aburto
 </footer>
 {% endblock %}

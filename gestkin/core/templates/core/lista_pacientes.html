@@ -1,10 +1,16 @@
-{% extends 'core/base.html' %}
+<!-- gestkin/core/templates/core/lista_pacientes.html -->
+{% extends 'core/base.html' %} <!-- Extiende la plantilla base -->
+
+{% block title %}Lista de Pacientes{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-    <h2 class="text-center text-primary mb-4">Listado de Pacientes</h2>
+    <h1 class="text-center text-primary mb-4">Lista de Pacientes</h1>
+    <p><strong>Médico:</strong> Dra. Laura Rodríguez</p>
+    <p><strong>Asistente:</strong> Daniela Sanhueza</p>
 
-    <table class="table table-bordered">
-        <thead>
+    <table class="table table-bordered table-striped">
+        <thead class="table-light">
             <tr>
                 <th>Nombre</th>
                 <th>Apellido</th>
@@ -12,7 +18,8 @@
                 <th>Sesiones</th>
                 <th>Inicio</th>
                 <th>Término</th>
-                <th>Patología</th>
+                <th>Estado</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -23,15 +30,26 @@
                 <td>{{ paciente.rut }}</td>
                 <td>{{ paciente.cantidad_sesiones }}</td>
                 <td>{{ paciente.fecha_inicio }}</td>
-                <td>{{ paciente.fecha_termino }}</td>
-                <td>{{ paciente.patologia }}</td>
+                <td>{{ paciente.fecha_termino|default:"-" }}</td>
+                <td>
+                    <span class="badge {% if paciente.fecha_termino %}bg-success{% else %}bg-warning{% endif %}">
+                        {% if paciente.fecha_termino %}Terminado{% else %}En Proceso{% endif %}
+                    </span>
+                </td>
+                <td>
+                    <a href="{% url 'editar_paciente' paciente.id %}" class="btn btn-sm btn-primary">Editar</a>
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" class="text-center">No hay pacientes registrados.</td>
+                <td colspan="8" class="text-center">No hay pacientes registrados.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    <div class="text-center mt-4">
+        <a href="{% url 'ingreso_pacientes' %}" class="btn btn-primary">Volver a Ingreso de Pacientes</a>
+    </div>
 </div>
 {% endblock %}

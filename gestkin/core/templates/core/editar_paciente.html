@@ -1,0 +1,40 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Editar Paciente{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center text-primary mb-4">Editar Información del Paciente</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="nombre" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ paciente.nombre }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="apellido" class="form-label">Apellido</label>
+            <input type="text" class="form-control" id="apellido" name="apellido" value="{{ paciente.apellido }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="rut" class="form-label">RUT</label>
+            <input type="text" class="form-control" id="rut" name="rut" value="{{ paciente.rut }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="cantidad_sesiones" class="form-label">Cantidad de Sesiones</label>
+            <input type="number" class="form-control" id="cantidad_sesiones" name="cantidad_sesiones" value="{{ paciente.cantidad_sesiones }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="fecha_inicio" class="form-label">Fecha de Inicio</label>
+            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ paciente.fecha_inicio }}">
+        </div>
+        <div class="mb-3">
+            <label for="fecha_termino" class="form-label">Fecha de Término</label>
+            <input type="date" class="form-control" id="fecha_termino" name="fecha_termino" value="{{ paciente.fecha_termino }}">
+        </div>
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            <a href="{% url 'lista_pacientes' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
