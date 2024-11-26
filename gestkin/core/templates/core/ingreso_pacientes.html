@@ -1,0 +1,72 @@
+<!-- Extiende la plantilla base -->
+{% extends 'core/base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Título -->
+    <h1 class="text-center text-primary mb-4">SISTEMA GESTKIN</h1>
+    <h2 class="text-center text-primary mb-4">Ingreso de Paciente</h2>
+
+    <!-- Formulario principal -->
+    <form method="post" action="{% url 'ingreso_pacientes' %}" class="row g-4">
+        {% csrf_token %}
+
+        <!-- Nombre y Apellido -->
+        <div class="col-md-6">
+            <label for="id_nombre" class="form-label"><strong>Nombre del Paciente:</strong></label>
+            {{ form.nombre|add_class:"form-control" }}
+        </div>
+        <div class="col-md-6">
+            <label for="id_apellido" class="form-label"><strong>Apellido del Paciente:</strong></label>
+            {{ form.apellido|add_class:"form-control" }}
+        </div>
+
+        <!-- RUT y Cantidad de Sesiones -->
+        <div class="col-md-6">
+            <label for="id_rut" class="form-label"><strong>RUT:</strong></label>
+            {{ form.rut|add_class:"form-control" }}
+        </div>
+        <div class="col-md-6">
+            <label for="cantidad_sesiones" class="form-label"><strong>Cantidad de Sesiones:</strong></label>
+            <div class="input-group">
+                <input type="number" name="cantidad_sesiones" value="{{ cantidad_sesiones }}" class="form-control" min="0">
+                <button type="submit" formaction="{% url 'ingreso_pacientes' %}" class="btn btn-info">Actualizar Sesiones</button>
+            </div>
+        </div>
+
+        <!-- Observaciones y Patología -->
+        <div class="col-md-6">
+            <label for="id_observaciones" class="form-label"><strong>Observaciones:</strong></label>
+            {{ form.observaciones|add_class:"form-control" }}
+        </div>
+        <div class="col-md-6">
+            <label for="id_patologia" class="form-label"><strong>Patología:</strong></label>
+            {{ form.patologia|add_class:"form-control" }}
+        </div>
+
+        <!-- Sesiones dinámicas -->
+        {% if sesiones %}
+        <div class="col-12">
+            <h3 class="text-primary mt-4">Sesiones</h3>
+        </div>
+        {% for i in sesiones %}
+        <div class="col-md-6">
+            <label for="fecha_{{ forloop.counter }}" class="form-label">Fecha de Sesión {{ forloop.counter }}</label>
+            <input type="date" name="fecha_{{ forloop.counter }}" id="fecha_{{ forloop.counter }}" class="form-control">
+        </div>
+        <div class="col-md-6">
+            <label for="hora_{{ forloop.counter }}" class="form-label">Hora de Sesión {{ forloop.counter }}</label>
+            <input type="time" name="hora_{{ forloop.counter }}" id="hora_{{ forloop.counter }}" class="form-control">
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- Botones -->
+        <div class="col-12 d-flex justify-content-between mt-4">
+            <button type="submit" class="btn btn-primary">Agregar Paciente</button>
+            <a href="{% url 'lista_pacientes' %}" class="btn btn-success">Ver Lista de Pacientes</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

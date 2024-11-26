@@ -1,0 +1,128 @@
+/* Fondo general */
+body {
+    background-color: #eef5f9; /* Fondo armonioso en azul claro */
+    font-family: Arial, sans-serif; /* Tipografía global */
+    color: #333; /* Texto de color oscuro para mejor contraste */
+}
+
+/* Estilo para títulos */
+h1, h2, h3 {
+    color: #007bff; /* Azul profesional */
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); /* Sombra ligera para destacar */
+}
+
+/* Inputs (como campos de texto, números, fechas, etc.) */
+input, select, textarea {
+    border: 2px solid #007bff; /* Borde azul más grueso */
+    border-radius: 5px; /* Bordes ligeramente redondeados */
+    padding: 8px; /* Espaciado interno */
+    font-size: 16px; /* Tamaño de fuente legible */
+    width: 100%;
+    box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.1); /* Sombra interna */
+}
+
+/* Cambios visuales cuando el usuario selecciona un campo */
+input:focus, select:focus, textarea:focus {
+    outline: none; /* Elimina el borde por defecto */
+    border: 2px solid #0056b3; /* Azul más oscuro al enfocar */
+    background-color: #f0f8ff; /* Fondo claro para el campo activo */
+}
+
+/* Botones */
+.btn {
+    font-size: 16px;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+/* Botón primario (como "Agregar Paciente") */
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3; /* Azul más oscuro al pasar el mouse */
+    transform: scale(1.05); /* Efecto de agrandamiento ligero */
+}
+
+/* Botón secundario (como "Actualizar Sesiones") */
+.btn-secondary {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #117a8b; /* Azul oscuro armonioso */
+    transform: scale(1.05);
+}
+
+/* Tablas, si las tienes */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    border: 2px solid #cccccc; /* Bordes de las celdas más gruesos */
+    padding: 10px;
+    text-align: left;
+}
+
+/* Bordes alternos en filas de tabla */
+tbody tr:nth-child(even) {
+    background-color: #f8f9fa; /* Gris claro */
+}
+
+tbody tr:nth-child(odd) {
+    background-color: white;
+}
+
+/* Ajustes al contenedor */
+.container {
+    padding: 30px; /* Mayor separación de contenido */
+    background-color: white; /* Fondo blanco para el contenido */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Sombra envolvente */
+    border-radius: 10px; /* Bordes redondeados del contenedor */
+}
+
+/* Navbar */
+.navbar {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    font-size: 18px;
+}
+
+/* Enlaces del navbar */
+.navbar a {
+    color: white;
+    text-decoration: none;
+    margin-right: 15px;
+}
+
+.navbar a:hover {
+    text-decoration: underline;
+}
+
+/* Ajuste para dispositivos pequeños */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px; /* Reducción de margen en pantallas pequeñas */
+    }
+
+    h1, h2 {
+        font-size: 20px; /* Ajustar tamaño de títulos */
+    }
+
+    .btn {
+        font-size: 14px;
+    }
+}

@@ -1,0 +1,52 @@
+<!-- Extiende la plantilla base -->
+{% extends 'core/base.html' %}
+{% block title %}Detalles del Paciente{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center text-primary mb-4">Detalles del Paciente</h1>
+    <p><strong>Nombre:</strong> {{ paciente.nombre }} {{ paciente.apellido }}</p>
+    <p><strong>RUT:</strong> {{ paciente.rut }}</p>
+    <p><strong>Cantidad de Sesiones:</strong> {{ paciente.cantidad_sesiones }}</p>
+
+    <h3 class="mt-4">Sesiones</h3>
+    <form method="post">
+        {% csrf_token %}
+        <table class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Asistencia</th>
+                    <th>Observaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sesion in sesiones %}
+                    <tr>
+                        <td>{{ sesion.fecha }}</td>
+                        <td>{{ sesion.hora }}</td>
+                        <td>
+                            <select name="asistencia_{{ sesion.id }}" class="form-control">
+                                <option value="Asistió" {% if sesion.asistencia == 'Asistió' %}selected{% endif %}>Asistió</option>
+                                <option value="No asistió" {% if sesion.asistencia == 'No asistió' %}selected{% endif %}>No asistió</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" name="observacion_{{ sesion.id }}" class="form-control" value="{{ sesion.observacion }}">
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">No hay sesiones registradas.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-success">Guardar Cambios</button>
+            <a href="{% url 'lista_pacientes' %}" class="btn btn-primary">Volver</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
