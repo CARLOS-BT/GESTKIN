@@ -1,8 +1,7 @@
-<!-- Extiende la plantilla base -->
 {% extends 'core/base.html' %}
+{% block content %}
 {% load custom_filters %}
 
-{% block content %}
 <div class="container my-5">
     <!-- Título -->
     <h1 class="text-center text-primary mb-4">SISTEMA GESTKIN</h1>
@@ -31,7 +30,7 @@
             <label for="cantidad_sesiones" class="form-label"><strong>Cantidad de Sesiones:</strong></label>
             <div class="input-group">
                 <input type="number" name="cantidad_sesiones" value="{{ cantidad_sesiones }}" class="form-control" min="0">
-                <button type="submit" formaction="{% url 'ingreso_pacientes' %}" class="btn btn-info">Actualizar Sesiones</button>
+                <button type="submit" name="actualizar_sesiones" class="btn btn-info">Actualizar Sesiones</button>
             </div>
         </div>
 
@@ -50,14 +49,16 @@
         <div class="col-12">
             <h3 class="text-primary mt-4">Sesiones</h3>
         </div>
-        {% for i in sesiones %}
+        {% for sesion in sesiones %}
         <div class="col-md-6">
-            <label for="fecha_{{ forloop.counter }}" class="form-label">Fecha de Sesión {{ forloop.counter }}</label>
-            <input type="date" name="fecha_{{ forloop.counter }}" id="fecha_{{ forloop.counter }}" class="form-control">
+            <label for="fecha_{{ sesion.index }}" class="form-label">Fecha de Sesión {{ sesion.index }}</label>
+            <input type="date" name="fecha_{{ sesion.index }}" id="fecha_{{ sesion.index }}" 
+                   class="form-control" value="{{ sesion.fecha }}">
         </div>
         <div class="col-md-6">
-            <label for="hora_{{ forloop.counter }}" class="form-label">Hora de Sesión {{ forloop.counter }}</label>
-            <input type="time" name="hora_{{ forloop.counter }}" id="hora_{{ forloop.counter }}" class="form-control">
+            <label for="hora_{{ sesion.index }}" class="form-label">Hora de Sesión {{ sesion.index }}</label>
+            <input type="time" name="hora_{{ sesion.index }}" id="hora_{{ sesion.index }}" 
+                   class="form-control" value="{{ sesion.hora }}">
         </div>
         {% endfor %}
         {% endif %}
@@ -70,3 +71,4 @@
     </form>
 </div>
 {% endblock %}
+

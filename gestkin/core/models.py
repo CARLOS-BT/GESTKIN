@@ -26,10 +26,11 @@ class Paciente(models.Model):
 
 
 class Sesion(models.Model):
-    paciente = models.ForeignKey(Paciente, related_name='sesiones', on_delete=models.CASCADE)
-    fecha = models.DateField(verbose_name="Fecha de Sesión")
-    hora = models.TimeField(verbose_name="Hora de Sesión")
-    asistio = models.BooleanField(verbose_name="¿Asistió?", default=False)
+    paciente = models.ForeignKey(Paciente, related_name="sesiones", on_delete=models.CASCADE)
+    fecha = models.DateField(verbose_name="Fecha de Sesión", null=True, blank=True)
+    hora = models.TimeField(verbose_name="Hora de Sesión", null=True, blank=True)
+    asistio = models.BooleanField(verbose_name="Asistió", default=False)
+    observaciones = models.TextField(verbose_name="Observaciones", blank=True, null=True)
 
     def __str__(self):
-        return f"Sesión {self.fecha} - {self.paciente.nombre} {self.paciente.apellido}"
+        return f"Sesión {self.fecha} - {self.paciente.nombre}"

@@ -5,51 +5,52 @@ from .models import Paciente, Sesion
 from .forms import PacienteForm, SesionFormSet
 from django.shortcuts import render, redirect
 
-def ingreso_pacientes(request):
-    if request.method == 'POST':
-        # Procesa el formulario del paciente
-        paciente_form = PacienteForm(request.POST)
-        if paciente_form.is_valid():
-            paciente = paciente_form.save()
+from datetime import datetime, timedelta
 
-            # Guarda las sesiones relacionadas
-            cantidad_sesiones = paciente.cantidad_sesiones
+def ingreso_pacientes(request):
+    if request.method == "POST":
+        form = PacienteForm(request.POST)
+
+        # Manejo del botón "Actualizar Sesiones"
+        if 'actualizar_sesiones' in request.POST:
+            cantidad_sesiones = int(request.POST.get("cantidad_sesiones", 0))
+
+            # Genera las fechas y horas para las sesiones
+            sesiones = []
+            hoy = datetime.now().date()
             for i in range(1, cantidad_sesiones + 1):
-                fecha = request.POST.get(f'fecha_{i}')
-                hora = request.POST.get(f'hora_{i}')
-                if fecha and hora:  # Solo guardar si ambos valores están presentes
-                    Sesion.objects.create(
-                        paciente=paciente,
-                        fecha=fecha,
-                        hora=hora
-                    )
-            return redirect('lista_pacientes')  # Redirige a la lista de pacientes
+                fecha = hoy + timedelta(days=(i - 1) * 7)  # Incremento semanal
+                sesiones.append({'index': i, 'fecha': fecha, 'hora': '09:00'})
+
+            # Mantiene el formulario con los datos actuales
+            return render(request, 'core/ingreso_pacientes.html', {
+                'form': form,
+                'cantidad_sesiones': cantidad_sesiones,
+                'sesiones': sesiones
+            })
+
+        # Guardar paciente y sus sesiones
+        elif form.is_valid():
+            paciente = form.save()
+
+            # Crear las sesiones
+            for i in range(paciente.cantidad_sesiones):
+                Sesion.objects.create(paciente=paciente)
+            
+            return redirect('lista_pacientes')
 
     else:
-        paciente_form = PacienteForm()
+        form = PacienteForm()
 
-    # Maneja la cantidad de sesiones dinámica
-    cantidad_sesiones = request.GET.get('cantidad_sesiones', 0)
-    try:
-        cantidad_sesiones = int(cantidad_sesiones)
-    except ValueError:
-        cantidad_sesiones = 0
-
-    sesiones = range(1, cantidad_sesiones + 1)
+    # Caso inicial sin sesiones generadas
     return render(request, 'core/ingreso_pacientes.html', {
-        'form': paciente_form,
-        'cantidad_sesiones': cantidad_sesiones,
-        'sesiones': sesiones,
+        'form': form,
+        'cantidad_sesiones': 0,
+        'sesiones': []
     })
-
 def lista_pacientes(request):
-    pacientes = Paciente.objects.all()  # Obtener todos los pacientes
+    pacientes = Paciente.objects.all()
     return render(request, 'core/lista_pacientes.html', {'pacientes': pacientes})
-
-def lista_pacientes(request):
-    pacientes = Paciente.objects.all()  # Obtener todos los pacientes
-    return render(request, 'core/lista_pacientes.html', {'pacientes': pacientes})
-
 
 def login_view(request):
     return render(request, 'core/login.html')  # Asegúrate de que el archivo login.html exista en templates/core/
@@ -98,8 +99,15 @@ def eliminar_paciente(request, paciente_id):
 
 def detalle_paciente(request, id):
     paciente = get_object_or_404(Paciente, id=id)
-    sesiones = paciente.sesiones.all()  # Obtener las sesiones relacionadas
+    sesiones_formset = SesionFormSet(instance=paciente)
+
+    if request.method == "POST":
+        sesiones_formset = SesionFormSet(request.POST, instance=paciente)
+        if sesiones_formset.is_valid():
+            sesiones_formset.save()
+            return redirect('detalle_paciente', id=paciente.id)
+
     return render(request, 'core/detalle_paciente.html', {
         'paciente': paciente,
-        'sesiones': sesiones,
+        'sesiones_formset': sesiones_formset,
     })
