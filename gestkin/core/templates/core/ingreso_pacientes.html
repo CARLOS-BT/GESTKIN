@@ -1,14 +1,20 @@
 {% extends 'core/base.html' %}
 {% block content %}
+{% load static %} <!-- Se carga la biblioteca de archivos estáticos -->
 {% load custom_filters %}
 
 <div class="container my-5">
+    <!-- Logo -->
+    <div class="text-center mb-4">
+        <img src="{% static 'core/img/logo.jpg' %}" alt="Gestkin Logo" class="img-fluid" style="max-width: 150px;">
+    </div>
+
     <!-- Título -->
     <h1 class="text-center text-primary mb-4">SISTEMA GESTKIN</h1>
     <h2 class="text-center text-primary mb-4">Ingreso de Paciente</h2>
 
     <!-- Formulario principal -->
-    <form method="post" action="{% url 'ingreso_pacientes' %}" class="row g-4">
+    <form method="post" action="{% url 'ingreso_pacientes' %}" enctype="multipart/form-data" class="row g-4">
         {% csrf_token %}
 
         <!-- Nombre y Apellido -->
@@ -52,13 +58,11 @@
         {% for sesion in sesiones %}
         <div class="col-md-6">
             <label for="fecha_{{ sesion.index }}" class="form-label">Fecha de Sesión {{ sesion.index }}</label>
-            <input type="date" name="fecha_{{ sesion.index }}" id="fecha_{{ sesion.index }}" 
-                   class="form-control" value="{{ sesion.fecha }}">
+            <input type="date" name="fecha_{{ sesion.index }}" id="fecha_{{ sesion.index }}" class="form-control" value="{{ sesion.fecha }}">
         </div>
         <div class="col-md-6">
             <label for="hora_{{ sesion.index }}" class="form-label">Hora de Sesión {{ sesion.index }}</label>
-            <input type="time" name="hora_{{ sesion.index }}" id="hora_{{ sesion.index }}" 
-                   class="form-control" value="{{ sesion.hora }}">
+            <input type="time" name="hora_{{ sesion.index }}" id="hora_{{ sesion.index }}" class="form-control" value="{{ sesion.hora }}">
         </div>
         {% endfor %}
         {% endif %}
@@ -71,4 +75,3 @@
     </form>
 </div>
 {% endblock %}
-

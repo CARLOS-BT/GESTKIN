@@ -4,12 +4,12 @@
 {% block content %}
 <div class="container mt-5">
     <!-- Título -->
-    <h1 class="text-center text-primary mb-4">Lista de Pacientes</h1>
+    <h1 class="text-center fw-bold" style="color: #3301a8; font-family: 'Poppins', sans-serif; font-size: 2rem;">Lista de Pacientes</h1>
 
     <!-- Tabla -->
-    <div class="table-responsive">
-        <table class="table table-bordered table-striped table-hover">
-            <thead class="table-light text-center">
+    <div class="table-responsive mt-4">
+        <table class="table table-bordered table-striped table-hover align-middle">
+            <thead class="table-primary text-center">
                 <tr>
                     <th>Nombre</th>
                     <th>Apellido</th>
@@ -23,27 +23,47 @@
             <tbody>
                 {% for paciente in pacientes %}
                 <tr>
-                    <td class="align-middle">{{ paciente.nombre }}</td>
-                    <td class="align-middle">{{ paciente.apellido }}</td>
-                    <td class="align-middle">{{ paciente.rut }}</td>
-                    <td class="align-middle text-center">{{ paciente.cantidad_sesiones }}</td>
-                    <td class="align-middle text-center">
-                        <span class="badge {% if paciente.estado == 'Terminado' %}bg-success{% else %}bg-warning text-dark{% endif %}">
-                            {{ paciente.estado }}
-                        </span>
+                    <td>{{ paciente.nombre }}</td>
+                    <td>{{ paciente.apellido }}</td>
+                    <td>{{ paciente.rut }}</td>
+                    <td class="text-center">{{ paciente.cantidad_sesiones }}</td>
+                    <td class="text-center">
+                        <form method="post" action="{% url 'actualizar_estado_paciente' paciente.id %}">
+                            {% csrf_token %}
+                            <select name="estado" 
+                                    class="form-select form-select-sm {% if paciente.estado == 'En Proceso' %}bg-warning{% elif paciente.estado == 'Terminado' %}bg-success text-white{% elif paciente.estado == 'No Terminado' %}bg-danger text-white{% endif %}" 
+                                    style="color: black; background-color: white; border: 1px solid #ccc;"
+                                    onchange="this.form.submit()">
+                                <option value="En Proceso" {% if paciente.estado == 'En Proceso' %}selected{% endif %}>
+                                    En Proceso
+                                </option>
+                                <option value="Terminado" {% if paciente.estado == 'Terminado' %}selected{% endif %}>
+                                    Terminado
+                                </option>
+                                <option value="No Terminado" {% if paciente.estado == 'No Terminado' %}selected{% endif %}>
+                                    No Terminado
+                                </option>
+                            </select>
+                        </form>
+                        
+                        
+                        
+                        
                     </td>
-                    <td class="align-middle text-center">
-                        <a href="{% url 'editar_paciente' paciente.id %}" class="btn btn-sm btn-primary me-1">
+                           
+                    <td class="text-center">
+                        <!-- Ajusta el tamaño de los botones -->
+                        <a href="{% url 'editar_paciente' paciente.id %}" class="btn btn-xs btn-primary me-2 px-2 py-1">
                             <i class="fas fa-edit"></i> Editar
                         </a>
                         <a href="{% url 'eliminar_paciente' paciente.id %}" 
-                           class="btn btn-sm btn-danger"
+                           class="btn btn-xs btn-danger px-2 py-1"
                            onclick="return confirm('¿Estás seguro de que deseas eliminar este paciente?');">
                             <i class="fas fa-trash-alt"></i> Eliminar
                         </a>
                     </td>
-                    <td class="align-middle text-center">
-                        <a href="{% url 'detalle_paciente' paciente.id %}" class="btn btn-sm btn-info">
+                    <td class="text-center">
+                        <a href="{% url 'detalle_paciente' paciente.id %}" class="btn btn-xs btn-info px-2 py-1">
                             <i class="fas fa-info-circle"></i> Detalles
                         </a>
                     </td>
@@ -57,9 +77,9 @@
         </table>
     </div>
 
-    <!-- Botón de regreso -->
-    <div class="text-center mt-4">
-        <a href="{% url 'ingreso_pacientes' %}" class="btn btn-success">
+    <!-- Botón de regreso al costado derecho -->
+    <div class="d-flex justify-content-end mt-4">
+        <a href="{% url 'ingreso_pacientes' %}" class="btn btn-success btn-lg">
             <i class="fas fa-arrow-left"></i> Volver al Ingreso de Pacientes
         </a>
     </div>

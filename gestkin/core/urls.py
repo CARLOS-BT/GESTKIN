@@ -1,6 +1,7 @@
 from gestkin.core import views
 from django.contrib import admin
 from django.urls import path
+from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
     path('', views.login_view, name='login'),                # Página de inicio de sesión
@@ -14,4 +15,6 @@ urlpatterns = [
     path('eliminar-paciente/<int:paciente_id>/', views.eliminar_paciente, name='eliminar_paciente'),
     path('detalle-paciente/<int:id>/', views.detalle_paciente, name='detalle_paciente'),
     path('lista-pacientes/', views.lista_pacientes, name='lista_pacientes'),
+    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
+    path("actualizar-estado-paciente/<int:paciente_id>/", views.actualizar_estado_paciente, name="actualizar_estado_paciente"),
 ]

@@ -17,10 +17,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from gestkin.core import views
-from gestkin.core import views
-from django.contrib import admin
 from django.contrib.auth.views import LogoutView
-
+from django.conf.urls.static import static
+from django.conf import settings
 
 urlpatterns = [
     path('', views.login_view, name='login'),  # Página de inicio de sesión
@@ -34,4 +33,9 @@ urlpatterns = [
     path('editar-paciente/<int:id>/', views.editar_paciente, name='editar_paciente'),
     path('eliminar-paciente/<int:paciente_id>/', views.eliminar_paciente, name='eliminar_paciente'),
     path('detalle-paciente/<int:id>/', views.detalle_paciente, name='detalle_paciente'),
+    path("actualizar-estado-paciente/<int:paciente_id>/", views.actualizar_estado_paciente, name="actualizar_estado_paciente"),
 ]
+
+# Agregar manejo de archivos de medios en modo DEBUG
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

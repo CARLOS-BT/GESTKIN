@@ -3,111 +3,141 @@ from django.forms import formset_factory
 from django.contrib import messages
 from .models import Paciente, Sesion
 from .forms import PacienteForm, SesionFormSet
-from django.shortcuts import render, redirect
-
-from datetime import datetime, timedelta
+from datetime import datetime
+from django.views.decorators.http import require_POST
+from .models import Paciente, Sesion
+from .forms import PacienteForm
+from django.http import JsonResponse
+from datetime import date
 
 def ingreso_pacientes(request):
+    form = PacienteForm(request.POST or None)
+    cantidad_sesiones = 0
+    sesiones = []
+
     if request.method == "POST":
-        form = PacienteForm(request.POST)
+        print("Datos recibidos en el formulario:", request.POST)
 
-        # Manejo del botón "Actualizar Sesiones"
-        if 'actualizar_sesiones' in request.POST:
+        # Si se presiona "Actualizar Sesiones"
+        if "actualizar_sesiones" in request.POST:
             cantidad_sesiones = int(request.POST.get("cantidad_sesiones", 0))
-
-            # Genera las fechas y horas para las sesiones
-            sesiones = []
-            hoy = datetime.now().date()
-            for i in range(1, cantidad_sesiones + 1):
-                fecha = hoy + timedelta(days=(i - 1) * 7)  # Incremento semanal
-                sesiones.append({'index': i, 'fecha': fecha, 'hora': '09:00'})
-
-            # Mantiene el formulario con los datos actuales
+            sesiones = [{"index": i + 1, "fecha": "", "hora": "09:00"} for i in range(cantidad_sesiones)]
             return render(request, 'core/ingreso_pacientes.html', {
                 'form': form,
                 'cantidad_sesiones': cantidad_sesiones,
-                'sesiones': sesiones
+                'sesiones': sesiones,
             })
 
-        # Guardar paciente y sus sesiones
-        elif form.is_valid():
-            paciente = form.save()
+        # Si se guarda el paciente
+        if form.is_valid():
+            print("Formulario válido")
+            paciente = form.save(commit=False)
+            paciente.estado = "En Proceso"  # Aseguramos que el estado sea "En Proceso"
+            paciente.save()
+            print("Paciente guardado:", paciente)
 
-            # Crear las sesiones
-            for i in range(paciente.cantidad_sesiones):
-                Sesion.objects.create(paciente=paciente)
-            
+            cantidad_sesiones = int(request.POST.get("cantidad_sesiones", 0))
+            for i in range(cantidad_sesiones):
+                fecha = request.POST.get(f"fecha_{i + 1}")
+                hora = request.POST.get(f"hora_{i + 1}", "09:00")
+                if fecha:
+                    sesion = Sesion.objects.create(
+                        paciente=paciente,
+                        fecha=fecha,
+                        hora=hora
+                    )
+                    print("Sesión guardada:", sesion)
+
             return redirect('lista_pacientes')
+        else:
+            print("Errores del formulario:", form.errors)
 
-    else:
-        form = PacienteForm()
-
-    # Caso inicial sin sesiones generadas
     return render(request, 'core/ingreso_pacientes.html', {
         'form': form,
-        'cantidad_sesiones': 0,
-        'sesiones': []
+        'cantidad_sesiones': cantidad_sesiones,
+        'sesiones': sesiones,
     })
+
+
 def lista_pacientes(request):
+    """
+    Vista para listar todos los pacientes.
+    """
     pacientes = Paciente.objects.all()
     return render(request, 'core/lista_pacientes.html', {'pacientes': pacientes})
 
+
 def login_view(request):
-    return render(request, 'core/login.html')  # Asegúrate de que el archivo login.html exista en templates/core/
+    """
+    Vista para la pantalla de inicio de sesión.
+    """
+    return render(request, 'core/login.html')
 
-# gestkin/core/views.py
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import Paciente
-
-def lista_pacientes(request):
-    pacientes = Paciente.objects.all()
-    return render(request, 'core/lista_pacientes.html', {
-        'pacientes': pacientes
-    })
 
 def editar_paciente(request, id):
+    """
+    Vista para editar un paciente existente.
+    """
     paciente = get_object_or_404(Paciente, id=id)
-    if request.method == 'POST':
-        paciente.nombre = request.POST['nombre']
-        paciente.apellido = request.POST['apellido']
-        paciente.rut = request.POST['rut']
-        paciente.cantidad_sesiones = request.POST['cantidad_sesiones']
-        paciente.fecha_inicio = request.POST['fecha_inicio']
-        paciente.fecha_termino = request.POST.get('fecha_termino', None)
-        paciente.hora_cita = request.POST['hora_cita']
-        paciente.patologia = request.POST['patologia']
-        paciente.observaciones = request.POST['observaciones']
-        paciente.save()
+    form = PacienteForm(request.POST or None, instance=paciente)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
         return redirect('lista_pacientes')
 
-    return render(request, 'core/editar_paciente.html', {'paciente': paciente})
+    return render(request, 'core/editar_paciente.html', {'form': form, 'paciente': paciente})
 
 def historial_pacientes(request):
-    # Puedes pasar datos a la plantilla si es necesario
+    """
+    Vista para mostrar el historial de pacientes.
+    """
     return render(request, 'core/historial_pacientes.html')
 
+
 def admin_usuarios(request):
+    """
+    Vista para la administración de usuarios.
+    """
     return render(request, 'core/admin_usuarios.html')
 
+
 def eliminar_paciente(request, paciente_id):
-    # Obtén el paciente con el ID especificado o lanza un 404 si no existe
+    """
+    Vista para eliminar un paciente.
+    """
     paciente = get_object_or_404(Paciente, id=paciente_id)
-    # Elimina el paciente
     paciente.delete()
-    # Redirige a la lista de pacientes tras la eliminación
-    return redirect('lista_pacientes')  # Ajusta 'lista_pacientes' si tu URL tiene otro nombre
+    return redirect('lista_pacientes')
+
 
 def detalle_paciente(request, id):
+    """
+    Vista para mostrar y editar el detalle de un paciente.
+    """
     paciente = get_object_or_404(Paciente, id=id)
-    sesiones_formset = SesionFormSet(instance=paciente)
+    form = PacienteForm(request.POST or None, instance=paciente)
+    formset = SesionFormSet(request.POST or None, instance=paciente)
 
-    if request.method == "POST":
-        sesiones_formset = SesionFormSet(request.POST, instance=paciente)
-        if sesiones_formset.is_valid():
-            sesiones_formset.save()
-            return redirect('detalle_paciente', id=paciente.id)
+    if request.method == "POST" and form.is_valid() and formset.is_valid():
+        form.save()
+        formset.save()
+        return redirect('lista_pacientes')
 
     return render(request, 'core/detalle_paciente.html', {
+        'form': form,
+        'formset': formset,
         'paciente': paciente,
-        'sesiones_formset': sesiones_formset,
     })
+
+
+@require_POST
+def actualizar_estado_paciente(request, paciente_id):
+    """
+    Vista para actualizar el estado de un paciente.
+    """
+    paciente = get_object_or_404(Paciente, id=paciente_id)
+    nuevo_estado = request.POST.get("estado")
+    if nuevo_estado in ["En Proceso", "Terminado", "No Terminado"]:
+        paciente.estado = nuevo_estado
+        paciente.save()
+    return redirect("lista_pacientes")
