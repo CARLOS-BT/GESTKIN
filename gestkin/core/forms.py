@@ -1,19 +1,20 @@
 from django import forms
 from django.forms.models import inlineformset_factory
 from .models import Paciente, Sesion
+from django import forms
+from .models import Paciente
+from .models import ArchivoPaciente
 
 class PacienteForm(forms.ModelForm):
     class Meta:
         model = Paciente
-        fields = ['nombre', 'apellido', 'rut', 'cantidad_sesiones', 'patologia', 'observaciones']
+        fields = ['nombre', 'apellido', 'rut', 'observaciones', 'patologia']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'apellido': forms.TextInput(attrs={'class': 'form-control'}),
-            'rut': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ejemplo: 12345678-9'}),
-            'cantidad_sesiones': forms.NumberInput(attrs={'class': 'form-control'}),
-            'patologia': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-                        
+            'rut': forms.TextInput(attrs={'class': 'form-control'}),
+            'observaciones': forms.Textarea(attrs={'class': 'form-control'}),
+            'patologia': forms.Textarea(attrs={'class': 'form-control'}),
         }
 
 class SesionForm(forms.ModelForm):
@@ -34,3 +35,8 @@ SesionFormSet = inlineformset_factory(
     extra=1,
     can_delete=True
 )
+
+class ArchivoPacienteForm(forms.ModelForm):
+    class Meta:
+        model = ArchivoPaciente
+        fields = ['archivo']

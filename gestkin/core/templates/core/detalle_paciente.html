@@ -1,81 +1,77 @@
-{% extends "base.html" %}
+{% extends 'core/base.html' %}
 {% block content %}
-
 <div class="container mt-4">
-  <div class="card">
-    <div class="card-header bg-primary text-white">
-      <h3>Detalle del Paciente</h3>
-    </div>
-    <div class="card-body">
-      <h5 class="mb-3">Datos del Paciente</h5>
-      <form method="POST">
-        {% csrf_token %}
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label for="id_nombre" class="form-label">Nombre del Paciente</label>
-            {{ form.nombre }}
-          </div>
-          <div class="col-md-6">
-            <label for="id_apellido" class="form-label">Apellido del Paciente</label>
-            {{ form.apellido }}
-          </div>
-        </div>
-        <div class="row mb-3">
-          <div class="col-md-4">
-            <label for="id_rut" class="form-label">RUT</label>
-            {{ form.rut }}
-          </div>
-          <div class="col-md-4">
-            <label for="id_cantidad_sesiones" class="form-label">Cantidad de Sesiones</label>
-            {{ form.cantidad_sesiones }}
-          </div>
-          <div class="col-md-4">
-            <label for="id_estado" class="form-label">Estado</label>
-            {{ form.estado }}
-          </div>
-        </div>
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label for="id_patologia" class="form-label">Patología</label>
-            {{ form.patologia }}
-          </div>
-          <div class="col-md-6">
-            <label for="id_observaciones" class="form-label">Observaciones</label>
-            {{ form.observaciones }}
-          </div>
+    <div class="row">
+        <!-- Sección de detalles del paciente -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary">
+                    <h3 class="text-white">Detalle del Paciente</h3> <!-- Clase de Bootstrap para texto blanco -->
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tr><th>Nombre:</th><td>{{ paciente.nombre }}</td></tr>
+                        <tr><th>Apellido:</th><td>{{ paciente.apellido }}</td></tr>
+                        <tr><th>RUT:</th><td>{{ paciente.rut }}</td></tr>
+                        <tr><th>Patología:</th><td>{{ paciente.patologia }}</td></tr>
+                        <tr><th>Observaciones:</th><td>{{ paciente.observaciones }}</td></tr>
+                        <tr><th>Sesiones:</th><td>{{ paciente.cantidad_sesiones }}</td></tr>
+                        <tr>
+                            <th>Estado:</th>
+                            <td>
+                                {% if paciente.estado == "En Proceso" %}
+                                    <span class="badge bg-warning text-dark">{{ paciente.estado }}</span>
+                                {% elif paciente.estado == "Terminado" %}
+                                    <span class="badge bg-success">{{ paciente.estado }}</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ paciente.estado }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="card-footer text-end">
+                    <a href="{% url 'editar_paciente' paciente.id %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                </div>
+            </div>
         </div>
 
-        <h5 class="mt-4 mb-3">Sesiones</h5>
-        <table class="table table-striped table-hover">
-          <thead class="table-dark">
-            <tr>
-              <th>Fecha</th>
-              <th>Hora</th>
-              <th>Asistencia</th>
-              <th>Observaciones</th>
-              <th>Estado</th>
-              <th>Eliminar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for session_form in formset %}
-              <tr>
-                <td>{{ session_form.fecha }}</td>
-                <td>{{ session_form.hora }}</td>
-                <td>{{ session_form.asistencia }}</td>
-                <td>{{ session_form.observaciones }}</td>
-                <td>{{ session_form.estado }}</td>
-                <td>{{ session_form.DELETE }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        <button type="submit" class="btn btn-success mt-3">Guardar Cambios</button>
-      </form>
+        <!-- Sección de archivos adjuntos -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    Archivos Adjuntos
+                </div>
+                <div class="card-body">
+                    <!-- Formulario para subir archivo -->
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-success w-100 mb-3">
+                            <i class="fas fa-upload"></i> Subir Archivo
+                        </button>
+                    </form>
+
+                    <!-- Lista de archivos adjuntos -->
+                    {% if archivos %}
+                        <ul class="list-group">
+                            {% for archivo in archivos %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <a href="{{ archivo.archivo.url }}" target="_blank">{{ archivo.archivo.name }}</a>
+                                    <a href="{{ archivo.archivo.url }}" class="btn btn-sm btn-primary" download>
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No hay archivos adjuntos.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card-footer">
-      <a href="{% url 'lista_pacientes' %}" class="btn btn-secondary">Volver a la Lista de Pacientes</a>
-    </div>
-  </div>
 </div>
 {% endblock %}

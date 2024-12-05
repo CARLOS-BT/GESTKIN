@@ -34,8 +34,9 @@ urlpatterns = [
     path('eliminar-paciente/<int:paciente_id>/', views.eliminar_paciente, name='eliminar_paciente'),
     path('detalle-paciente/<int:id>/', views.detalle_paciente, name='detalle_paciente'),
     path("actualizar-estado-paciente/<int:paciente_id>/", views.actualizar_estado_paciente, name="actualizar_estado_paciente"),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Agregar manejo de archivos de medios en modo DEBUG
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

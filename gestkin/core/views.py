@@ -9,6 +9,8 @@ from .models import Paciente, Sesion
 from .forms import PacienteForm
 from django.http import JsonResponse
 from datetime import date
+from .models import Paciente, ArchivoPaciente
+from .forms import ArchivoPacienteForm
 
 def ingreso_pacientes(request):
     form = PacienteForm(request.POST or None)
@@ -30,9 +32,8 @@ def ingreso_pacientes(request):
 
         # Si se guarda el paciente
         if form.is_valid():
-            print("Formulario válido")
             paciente = form.save(commit=False)
-            paciente.estado = "En Proceso"  # Aseguramos que el estado sea "En Proceso"
+            paciente.estado = "En Proceso"
             paciente.save()
             print("Paciente guardado:", paciente)
 
@@ -41,16 +42,17 @@ def ingreso_pacientes(request):
                 fecha = request.POST.get(f"fecha_{i + 1}")
                 hora = request.POST.get(f"hora_{i + 1}", "09:00")
                 if fecha:
-                    sesion = Sesion.objects.create(
+                    Sesion.objects.create(
                         paciente=paciente,
                         fecha=fecha,
                         hora=hora
                     )
-                    print("Sesión guardada:", sesion)
+
+            # **Actualiza la cantidad de sesiones en el paciente**
+            paciente.cantidad_sesiones = cantidad_sesiones
+            paciente.save()  # Guarda el número actualizado de sesiones
 
             return redirect('lista_pacientes')
-        else:
-            print("Errores del formulario:", form.errors)
 
     return render(request, 'core/ingreso_pacientes.html', {
         'form': form,
@@ -112,32 +114,36 @@ def eliminar_paciente(request, paciente_id):
 
 def detalle_paciente(request, id):
     """
-    Vista para mostrar y editar el detalle de un paciente.
+    Vista para mostrar detalles del paciente y permitir la subida de archivos.
     """
+    # Obtener el paciente y los archivos relacionados
     paciente = get_object_or_404(Paciente, id=id)
-    form = PacienteForm(request.POST or None, instance=paciente)
-    formset = SesionFormSet(request.POST or None, instance=paciente)
+    archivos = paciente.archivos.all()  # Archivos relacionados con el paciente
 
-    if request.method == "POST" and form.is_valid() and formset.is_valid():
-        form.save()
-        formset.save()
-        return redirect('lista_pacientes')
+    # Procesar el formulario de subida de archivos
+    if request.method == "POST":
+        form = ArchivoPacienteForm(request.POST, request.FILES)
+        if form.is_valid():
+            archivo = form.save(commit=False)
+            archivo.paciente = paciente  # Asociar el archivo al paciente
+            archivo.save()
+            return redirect('detalle_paciente', id=paciente.id)
+    else:
+        form = ArchivoPacienteForm()
 
+    # Renderizar la plantilla
     return render(request, 'core/detalle_paciente.html', {
-        'form': form,
-        'formset': formset,
         'paciente': paciente,
+        'archivos': archivos,
+        'form': form,
     })
-
 
 @require_POST
 def actualizar_estado_paciente(request, paciente_id):
-    """
-    Vista para actualizar el estado de un paciente.
-    """
     paciente = get_object_or_404(Paciente, id=paciente_id)
     nuevo_estado = request.POST.get("estado")
-    if nuevo_estado in ["En Proceso", "Terminado", "No Terminado"]:
+    estados_validos = ["En Proceso", "Terminado", "No Terminado"]
+    if nuevo_estado in estados_validos:
         paciente.estado = nuevo_estado
         paciente.save()
     return redirect("lista_pacientes")

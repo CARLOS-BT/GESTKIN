@@ -1,77 +1,80 @@
 {% extends 'core/base.html' %}
 {% block content %}
-{% load static %} <!-- Se carga la biblioteca de archivos estáticos -->
+{% load static %}
 {% load custom_filters %}
 
-<div class="container my-5">
-    <!-- Logo -->
-    <div class="text-center mb-4">
-        <img src="{% static 'core/img/logo.jpg' %}" alt="Gestkin Logo" class="img-fluid" style="max-width: 150px;">
-    </div>
-
-    <!-- Título -->
-    <h1 class="text-center text-primary mb-4">SISTEMA GESTKIN</h1>
-    <h2 class="text-center text-primary mb-4">Ingreso de Paciente</h2>
-
-    <!-- Formulario principal -->
-    <form method="post" action="{% url 'ingreso_pacientes' %}" enctype="multipart/form-data" class="row g-4">
-        {% csrf_token %}
-
-        <!-- Nombre y Apellido -->
-        <div class="col-md-6">
-            <label for="id_nombre" class="form-label"><strong>Nombre del Paciente:</strong></label>
-            {{ form.nombre|add_class:"form-control" }}
-        </div>
-        <div class="col-md-6">
-            <label for="id_apellido" class="form-label"><strong>Apellido del Paciente:</strong></label>
-            {{ form.apellido|add_class:"form-control" }}
+<div class="container-fluid my-5 d-flex justify-content-center">
+    <!-- Contenedor principal -->
+    <div class="w-100" style="max-width: 86%; font-family: 'Poppins', sans-serif;">
+        <!-- Logo -->
+        <div class="text-center mb-4">
+            <img src="{% static 'core/img/logo.jpg' %}" alt="Gestkin Logo" class="img-fluid" style="max-width: 150px;">
         </div>
 
-        <!-- RUT y Cantidad de Sesiones -->
-        <div class="col-md-6">
-            <label for="id_rut" class="form-label"><strong>RUT:</strong></label>
-            {{ form.rut|add_class:"form-control" }}
-        </div>
-        <div class="col-md-6">
-            <label for="cantidad_sesiones" class="form-label"><strong>Cantidad de Sesiones:</strong></label>
-            <div class="input-group">
-                <input type="number" name="cantidad_sesiones" value="{{ cantidad_sesiones }}" class="form-control" min="0">
-                <button type="submit" name="actualizar_sesiones" class="btn btn-info">Actualizar Sesiones</button>
+        <!-- Títulos -->
+        <h1 class="text-center text-primary mb-4" style="font-size: 2.5rem; font-weight: bold;">SISTEMA GESTKIN</h1>
+        <h2 class="text-center text-primary mb-4" style="font-size: 1.8rem;">Ingreso de Paciente</h2>
+
+        <!-- Formulario -->
+        <form method="post" action="{% url 'ingreso_pacientes' %}" enctype="multipart/form-data" class="row g-4">
+            {% csrf_token %}
+
+            <!-- Nombre y Apellido -->
+            <div class="col-md-6">
+                <label for="id_nombre" class="form-label" style="font-size: 1.3rem;"><strong>Nombre del Paciente:</strong></label>
+                {{ form.nombre|add_class:"form-control form-control-lg" }}
             </div>
-        </div>
+            <div class="col-md-6">
+                <label for="id_apellido" class="form-label" style="font-size: 1.3rem;"><strong>Apellido del Paciente:</strong></label>
+                {{ form.apellido|add_class:"form-control form-control-lg" }}
+            </div>
 
-        <!-- Observaciones y Patología -->
-        <div class="col-md-6">
-            <label for="id_observaciones" class="form-label"><strong>Observaciones:</strong></label>
-            {{ form.observaciones|add_class:"form-control" }}
-        </div>
-        <div class="col-md-6">
-            <label for="id_patologia" class="form-label"><strong>Patología:</strong></label>
-            {{ form.patologia|add_class:"form-control" }}
-        </div>
+            <!-- RUT y Cantidad de Sesiones -->
+            <div class="col-md-6">
+                <label for="id_rut" class="form-label" style="font-size: 1.3rem;"><strong>RUT:</strong></label>
+                {{ form.rut|add_class:"form-control form-control-lg" }}
+            </div>
+            <div class="col-md-6">
+                <label for="cantidad_sesiones" class="form-label" style="font-size: 1.3rem;"><strong>Cantidad de Sesiones:</strong></label>
+                <div class="input-group">
+                    <input type="number" name="cantidad_sesiones" value="{{ cantidad_sesiones }}" class="form-control form-control-lg" min="0">
+                    <button type="submit" name="actualizar_sesiones" class="btn btn-info px-4 py-2" style="font-size: 1.2rem;">Actualizar</button>
+                </div>
+            </div>
 
-        <!-- Sesiones dinámicas -->
-        {% if sesiones %}
-        <div class="col-12">
-            <h3 class="text-primary mt-4">Sesiones</h3>
-        </div>
-        {% for sesion in sesiones %}
-        <div class="col-md-6">
-            <label for="fecha_{{ sesion.index }}" class="form-label">Fecha de Sesión {{ sesion.index }}</label>
-            <input type="date" name="fecha_{{ sesion.index }}" id="fecha_{{ sesion.index }}" class="form-control" value="{{ sesion.fecha }}">
-        </div>
-        <div class="col-md-6">
-            <label for="hora_{{ sesion.index }}" class="form-label">Hora de Sesión {{ sesion.index }}</label>
-            <input type="time" name="hora_{{ sesion.index }}" id="hora_{{ sesion.index }}" class="form-control" value="{{ sesion.hora }}">
-        </div>
-        {% endfor %}
-        {% endif %}
+            <!-- Observaciones y Patología -->
+            <div class="col-md-6">
+                <label for="id_observaciones" class="form-label" style="font-size: 1.3rem;"><strong>Observaciones:</strong></label>
+                {{ form.observaciones|add_class:"form-control" }}
+            </div>
+            <div class="col-md-6">
+                <label for="id_patologia" class="form-label" style="font-size: 1.3rem;"><strong>Patología:</strong></label>
+                {{ form.patologia|add_class:"form-control" }}
+            </div>
 
-        <!-- Botones -->
-        <div class="col-12 d-flex justify-content-between mt-4">
-            <button type="submit" class="btn btn-primary">Agregar Paciente</button>
-            <a href="{% url 'lista_pacientes' %}" class="btn btn-success">Ver Lista de Pacientes</a>
-        </div>
-    </form>
+            <!-- Sesiones dinámicas -->
+            {% if sesiones %}
+            <div class="col-12">
+                <h3 class="text-primary mt-4" style="font-size: 1.6rem;">Sesiones</h3>
+            </div>
+            {% for sesion in sesiones %}
+            <div class="col-md-6">
+                <label for="fecha_{{ sesion.index }}" class="form-label" style="font-size: 1.3rem;">Fecha de Sesión {{ sesion.index }}</label>
+                <input type="date" name="fecha_{{ sesion.index }}" id="fecha_{{ sesion.index }}" class="form-control form-control-lg" value="{{ sesion.fecha }}">
+            </div>
+            <div class="col-md-6">
+                <label for="hora_{{ sesion.index }}" class="form-label" style="font-size: 1.3rem;">Hora de Sesión {{ sesion.index }}</label>
+                <input type="time" name="hora_{{ sesion.index }}" id="hora_{{ sesion.index }}" class="form-control form-control-lg" value="{{ sesion.hora }}">
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <!-- Botones -->
+            <div class="col-12 d-flex justify-content-between mt-4">
+                <button type="submit" class="btn btn-primary px-5 py-3" style="font-size: 1.3rem; font-weight: bold;">Agregar Paciente</button>
+                <a href="{% url 'lista_pacientes' %}" class="btn btn-success px-5 py-3" style="font-size: 1.3rem; font-weight: bold;">Ver Lista de Pacientes</a>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}

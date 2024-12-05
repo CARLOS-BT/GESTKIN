@@ -57,3 +57,11 @@ class Sesion(models.Model):
 
     def __str__(self):
         return f"Sesión de {self.paciente.nombre} el {self.fecha} a las {self.hora}"
+    
+class ArchivoPaciente(models.Model):
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name="archivos")
+    archivo = models.FileField(upload_to="archivos_pacientes/")
+    nombre = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return self.nombre or self.archivo.name

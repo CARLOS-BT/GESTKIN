@@ -3,38 +3,149 @@
 {% block title %}Editar Paciente{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1 class="text-center text-primary mb-4">Editar Información del Paciente</h1>
-    <form method="post">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="nombre" class="form-label">Nombre</label>
-            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ paciente.nombre }}" required>
-        </div>
-        <div class="mb-3">
-            <label for="apellido" class="form-label">Apellido</label>
-            <input type="text" class="form-control" id="apellido" name="apellido" value="{{ paciente.apellido }}" required>
-        </div>
-        <div class="mb-3">
-            <label for="rut" class="form-label">RUT</label>
-            <input type="text" class="form-control" id="rut" name="rut" value="{{ paciente.rut }}" required>
-        </div>
-        <div class="mb-3">
-            <label for="cantidad_sesiones" class="form-label">Cantidad de Sesiones</label>
-            <input type="number" class="form-control" id="cantidad_sesiones" name="cantidad_sesiones" value="{{ paciente.cantidad_sesiones }}" required>
-        </div>
-        <div class="mb-3">
-            <label for="fecha_inicio" class="form-label">Fecha de Inicio</label>
-            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ paciente.fecha_inicio }}">
-        </div>
-        <div class="mb-3">
-            <label for="fecha_termino" class="form-label">Fecha de Término</label>
-            <input type="date" class="form-control" id="fecha_termino" name="fecha_termino" value="{{ paciente.fecha_termino }}">
-        </div>
-        <div class="text-center">
-            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-            <a href="{% url 'lista_pacientes' %}" class="btn btn-secondary">Cancelar</a>
-        </div>
-    </form>
+<div class="container-fluid my-5 d-flex justify-content-center">
+    <div class="w-100" style="max-width: 86%; font-family: 'Poppins', sans-serif;">
+        <!-- Título -->
+        <h2 class="text-center text-primary mb-4" style="font-size: 2.2rem; font-weight: bold;">Editar Información del Paciente</h2>
+
+        <!-- Formulario -->
+        <form method="post" action="{% url 'editar_paciente' paciente.id %}" class="row g-4">
+            {% csrf_token %}
+
+            <!-- Nombre -->
+            <div class="col-md-6">
+                <label for="nombre" class="form-label" style="font-size: 1.2rem;"><strong>Nombre:</strong></label>
+                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ paciente.nombre }}" 
+                       style="font-size: 1.1rem; padding: 0.75rem; border-radius: 8px;" required>
+            </div>
+
+            <!-- Apellido -->
+            <div class="col-md-6">
+                <label for="apellido" class="form-label" style="font-size: 1.2rem;"><strong>Apellido:</strong></label>
+                <input type="text" class="form-control" id="apellido" name="apellido" value="{{ paciente.apellido }}" 
+                       style="font-size: 1.1rem; padding: 0.75rem; border-radius: 8px;" required>
+            </div>
+
+            <!-- RUT -->
+            <div class="col-md-6">
+                <label for="rut" class="form-label" style="font-size: 1.2rem;"><strong>RUT:</strong></label>
+                <input type="text" class="form-control" id="rut" name="rut" value="{{ paciente.rut }}" 
+                       style="font-size: 1.1rem; padding: 0.75rem; border-radius: 8px;" required>
+            </div>
+
+            <!-- Cantidad de Sesiones -->
+            <div class="col-md-6">
+                <label for="cantidad_sesiones" class="form-label" style="font-size: 1.2rem;"><strong>Cantidad de Sesiones:</strong></label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="cantidad_sesiones" name="cantidad_sesiones" 
+                           value="{{ paciente.cantidad_sesiones }}" min="0" 
+                           style="font-size: 1.1rem; padding: 0.75rem; border-radius: 8px;" required>
+                    <button type="button" id="actualizar_sesiones" class="btn btn-info px-4 py-2" 
+                            style="font-size: 1rem; border-radius: 8px;">Actualizar</button>
+                </div>
+            </div>
+
+            <!-- Sesiones dinámicas -->
+            <div id="sesiones-container" class="col-12">
+                {% if sesiones %}
+                <h3 class="text-primary mt-4" style="font-size: 1.5rem;">Sesiones</h3>
+                {% for sesion in sesiones %}
+                <div class="row g-3 align-items-center mt-2">
+                    <div class="col-md-6">
+                        <label for="fecha_{{ sesion.index }}" class="form-label" style="font-size: 1.1rem;">Fecha de Sesión {{ sesion.index }}</label>
+                        <input type="date" name="fecha_{{ sesion.index }}" id="fecha_{{ sesion.index }}" 
+                               class="form-control" value="{{ sesion.fecha }}" 
+                               style="font-size: 1.1rem; padding: 0.75rem; border-radius: 8px;">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="hora_{{ sesion.index }}" class="form-label" style="font-size: 1.1rem;">Hora de Sesión {{ sesion.index }}</label>
+                        <input type="time" name="hora_{{ sesion.index }}" id="hora_{{ sesion.index }}" 
+                               class="form-control" value="{{ sesion.hora }}" 
+                               style="font-size: 1.1rem; padding: 0.75rem; border-radius: 8px;">
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Botones -->
+            <div class="col-12 d-flex justify-content-between mt-4">
+                <button type="submit" class="btn btn-primary px-5 py-3" 
+                        style="font-size: 1.2rem; font-weight: bold; border-radius: 8px;">Guardar Cambios</button>
+                <a href="{% url 'lista_pacientes' %}" class="btn btn-secondary px-5 py-3" 
+                   style="font-size: 1.2rem; font-weight: bold; border-radius: 8px;">Cancelar</a>
+            </div>
+        </form>
+    </div>
 </div>
+
+<script>
+    // Manejo dinámico de las sesiones
+    document.getElementById('actualizar_sesiones').addEventListener('click', function () {
+        const cantidadSesiones = document.getElementById('cantidad_sesiones').value;
+        const sesionesContainer = document.getElementById('sesiones-container');
+
+        // Limpia el contenedor de sesiones previas
+        sesionesContainer.innerHTML = '';
+
+        if (cantidadSesiones > 0) {
+            const title = document.createElement('h3');
+            title.className = 'text-primary mt-4';
+            title.style.fontSize = '1.5rem';
+            title.innerText = 'Sesiones';
+            sesionesContainer.appendChild(title);
+
+            for (let i = 1; i <= cantidadSesiones; i++) {
+                // Creación de los campos de fecha
+                const row = document.createElement('div');
+                row.className = 'row g-3 align-items-center mt-2';
+
+                const colFecha = document.createElement('div');
+                colFecha.className = 'col-md-6';
+
+                const labelFecha = document.createElement('label');
+                labelFecha.setAttribute('for', `fecha_${i}`);
+                labelFecha.className = 'form-label';
+                labelFecha.style.fontSize = '1.1rem';
+                labelFecha.innerText = `Fecha de Sesión ${i}`;
+                colFecha.appendChild(labelFecha);
+
+                const inputFecha = document.createElement('input');
+                inputFecha.type = 'date';
+                inputFecha.name = `fecha_${i}`;
+                inputFecha.id = `fecha_${i}`;
+                inputFecha.className = 'form-control';
+                inputFecha.style.fontSize = '1.1rem';
+                inputFecha.style.padding = '0.75rem';
+                inputFecha.style.borderRadius = '8px';
+                colFecha.appendChild(inputFecha);
+
+                // Creación de los campos de hora
+                const colHora = document.createElement('div');
+                colHora.className = 'col-md-6';
+
+                const labelHora = document.createElement('label');
+                labelHora.setAttribute('for', `hora_${i}`);
+                labelHora.className = 'form-label';
+                labelHora.style.fontSize = '1.1rem';
+                labelHora.innerText = `Hora de Sesión ${i}`;
+                colHora.appendChild(labelHora);
+
+                const inputHora = document.createElement('input');
+                inputHora.type = 'time';
+                inputHora.name = `hora_${i}`;
+                inputHora.id = `hora_${i}`;
+                inputHora.className = 'form-control';
+                inputHora.style.fontSize = '1.1rem';
+                inputHora.style.padding = '0.75rem';
+                inputHora.style.borderRadius = '8px';
+                colHora.appendChild(inputHora);
+
+                row.appendChild(colFecha);
+                row.appendChild(colHora);
+                sesionesContainer.appendChild(row);
+            }
+        }
+    });
+</script>
 {% endblock %}
