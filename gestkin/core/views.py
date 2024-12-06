@@ -1,20 +1,20 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.forms import formset_factory
 from django.contrib import messages
-from .models import Paciente, Sesion
+from .models import Paciente
 from .forms import PacienteForm, SesionFormSet
 from datetime import datetime
 from django.views.decorators.http import require_POST
-from .models import Paciente, Sesion
-from .forms import PacienteForm
 from django.http import JsonResponse
 from datetime import date
 from .models import Paciente, ArchivoPaciente
 from .forms import ArchivoPacienteForm
+from django.utils.timezone import now
+from datetime import datetime, timedelta
+from .models import Sesion
 
 def ingreso_pacientes(request):
     form = PacienteForm(request.POST or None)
-    cantidad_sesiones = 0
     sesiones = []
 
     if request.method == "POST":
@@ -35,28 +35,29 @@ def ingreso_pacientes(request):
             paciente = form.save(commit=False)
             paciente.estado = "En Proceso"
             paciente.save()
-            print("Paciente guardado:", paciente)
 
+            # Crear sesiones automáticamente
             cantidad_sesiones = int(request.POST.get("cantidad_sesiones", 0))
+            fecha_inicial = datetime.now().date()
+            hora_inicial = "09:00"
+
             for i in range(cantidad_sesiones):
-                fecha = request.POST.get(f"fecha_{i + 1}")
-                hora = request.POST.get(f"hora_{i + 1}", "09:00")
-                if fecha:
-                    Sesion.objects.create(
-                        paciente=paciente,
-                        fecha=fecha,
-                        hora=hora
-                    )
+                fecha = request.POST.get(f"fecha_{i + 1}", fecha_inicial + timedelta(days=i * 7))
+                hora = request.POST.get(f"hora_{i + 1}", hora_inicial)
+                Sesion.objects.create(
+                    paciente=paciente,
+                    fecha=fecha,
+                    hora=hora,
+                )
 
-            # **Actualiza la cantidad de sesiones en el paciente**
             paciente.cantidad_sesiones = cantidad_sesiones
-            paciente.save()  # Guarda el número actualizado de sesiones
+            paciente.save()  # Guardar el número actualizado de sesiones
 
-            return redirect('lista_pacientes')
+            messages.success(request, "Paciente y sesiones agregados correctamente.")
+            return redirect('detalle_paciente', id=paciente.id)
 
     return render(request, 'core/ingreso_pacientes.html', {
         'form': form,
-        'cantidad_sesiones': cantidad_sesiones,
         'sesiones': sesiones,
     })
 
@@ -77,17 +78,67 @@ def login_view(request):
 
 
 def editar_paciente(request, id):
-    """
-    Vista para editar un paciente existente.
-    """
+    # Obtener el paciente y el formulario asociado
     paciente = get_object_or_404(Paciente, id=id)
     form = PacienteForm(request.POST or None, instance=paciente)
 
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        return redirect('lista_pacientes')
+    # Obtener las sesiones actuales del paciente ordenadas por fecha
+    sesiones_actuales = Sesion.objects.filter(paciente=paciente).order_by("fecha", "hora")
 
-    return render(request, 'core/editar_paciente.html', {'form': form, 'paciente': paciente})
+    # Procesar el formulario al enviar los datos
+    if request.method == "POST":
+        if form.is_valid():
+            # Guardar los cambios básicos del paciente
+            paciente = form.save()
+
+            # Obtener la nueva cantidad de sesiones desde el formulario
+            nueva_cantidad = int(request.POST.get("cantidad_sesiones", paciente.cantidad_sesiones))
+            cantidad_actual = sesiones_actuales.count()
+
+            # Si aumentan las sesiones
+            if nueva_cantidad > cantidad_actual:
+                # Calcular cuántas sesiones hay que agregar
+                cantidad_a_agregar = nueva_cantidad - cantidad_actual
+
+                # Usar la última fecha conocida para calcular las nuevas sesiones
+                ultima_fecha = sesiones_actuales.last().fecha if sesiones_actuales.exists() else datetime.now().date()
+
+                for i in range(cantidad_a_agregar):
+                    nueva_fecha = ultima_fecha + timedelta(days=7 * (i + 1))  # Incrementar semanas
+                    Sesion.objects.create(
+                        paciente=paciente,
+                        fecha=nueva_fecha,
+                        hora="09:00",  # Hora predeterminada
+                        asistencia=False,
+                    )
+
+            # Si disminuyen las sesiones
+            elif nueva_cantidad < cantidad_actual:
+                # Calcular cuántas sesiones hay que eliminar
+                cantidad_a_eliminar = cantidad_actual - nueva_cantidad
+
+                # Eliminar solo sesiones pendientes o "No Asistió"
+                sesiones_a_eliminar = sesiones_actuales.filter(asistencia=False)[:cantidad_a_eliminar]
+                sesiones_a_eliminar.delete()
+
+            # Guardar la nueva cantidad de sesiones en el paciente
+            paciente.cantidad_sesiones = nueva_cantidad
+            paciente.save()
+
+            messages.success(request, "Información del paciente actualizada correctamente.")
+            return redirect('detalle_paciente', id=paciente.id)
+
+    # Preparar los datos de las sesiones para mostrarlas en el formulario
+    sesiones = [
+        {"index": i + 1, "fecha": sesion.fecha, "hora": sesion.hora}
+        for i, sesion in enumerate(sesiones_actuales)
+    ]
+
+    return render(request, 'core/editar_paciente.html', {
+        "form": form,
+        "paciente": paciente,
+        "sesiones": sesiones,
+    })
 
 def historial_pacientes(request):
     """
@@ -113,30 +164,74 @@ def eliminar_paciente(request, paciente_id):
 
 
 def detalle_paciente(request, id):
-    """
-    Vista para mostrar detalles del paciente y permitir la subida de archivos.
-    """
-    # Obtener el paciente y los archivos relacionados
     paciente = get_object_or_404(Paciente, id=id)
-    archivos = paciente.archivos.all()  # Archivos relacionados con el paciente
+    sesiones = Sesion.objects.filter(paciente=paciente).order_by("fecha", "hora")
+    archivos = paciente.archivos.all()  # Obtener archivos adjuntos del paciente
 
-    # Procesar el formulario de subida de archivos
     if request.method == "POST":
-        form = ArchivoPacienteForm(request.POST, request.FILES)
-        if form.is_valid():
-            archivo = form.save(commit=False)
-            archivo.paciente = paciente  # Asociar el archivo al paciente
-            archivo.save()
-            return redirect('detalle_paciente', id=paciente.id)
-    else:
-        form = ArchivoPacienteForm()
+        # Editar sesión
+        if "editar_sesion" in request.POST:
+            sesion_id = request.POST.get("sesion_id")
+            fecha = request.POST.get("fecha")
+            hora = request.POST.get("hora")
+            asistencia = request.POST.get("asistencia") == "Sí"
 
-    # Renderizar la plantilla
-    return render(request, 'core/detalle_paciente.html', {
-        'paciente': paciente,
-        'archivos': archivos,
-        'form': form,
+            sesion = get_object_or_404(Sesion, id=sesion_id)
+            sesion.fecha = fecha
+            sesion.hora = hora
+            sesion.asistencia = asistencia
+            sesion.save()
+
+            messages.success(request, "Sesión actualizada correctamente.")
+            return redirect("detalle_paciente", id=id)
+
+        # Agregar nuevas sesiones
+        elif "agregar_sesiones" in request.POST:
+            cantidad_nueva = int(request.POST.get("cantidad_nueva", 0))
+            if cantidad_nueva > 0:
+                ultima_fecha = sesiones.last().fecha if sesiones.exists() else datetime.now().date()
+                for i in range(cantidad_nueva):
+                    nueva_fecha = ultima_fecha + timedelta(days=7 * (i + 1))
+                    Sesion.objects.create(
+                        paciente=paciente,
+                        fecha=nueva_fecha,
+                        hora="09:00",
+                        asistencia=False,
+                    )
+
+                # Actualizar la cantidad de sesiones del paciente
+                paciente.cantidad_sesiones += cantidad_nueva
+                paciente.save()
+
+                messages.success(request, f"{cantidad_nueva} sesión(es) agregadas correctamente.")
+                return redirect("detalle_paciente", id=id)
+
+        # Subir archivo
+        elif "subir_archivo" in request.POST and "archivo" in request.FILES:
+            archivo = request.FILES["archivo"]
+            ArchivoPaciente.objects.create(paciente=paciente, archivo=archivo)
+            messages.success(request, "Archivo subido correctamente.")
+            return redirect("detalle_paciente", id=id)
+
+    # Preparar formulario para editar datos del paciente
+    form = PacienteForm(instance=paciente)
+
+    return render(request, "core/detalle_paciente.html", {
+        "paciente": paciente,
+        "sesiones": sesiones,
+        "archivos": archivos,
+        "form": form,
     })
+
+
+def eliminar_archivo(request, archivo_id):
+    archivo = get_object_or_404(ArchivoPaciente, id=archivo_id)
+    paciente_id = archivo.paciente.id  # Guardar el ID del paciente antes de borrar
+    archivo.archivo.delete()  # Eliminar el archivo físico
+    archivo.delete()  # Eliminar el registro de la base de datos
+    messages.success(request, "El archivo se eliminó correctamente.")
+    return redirect('detalle_paciente', id=paciente_id)
+
 
 @require_POST
 def actualizar_estado_paciente(request, paciente_id):
@@ -147,3 +242,35 @@ def actualizar_estado_paciente(request, paciente_id):
         paciente.estado = nuevo_estado
         paciente.save()
     return redirect("lista_pacientes")
+
+def eliminar_sesion(request, sesion_id):
+    sesion = get_object_or_404(Sesion, id=sesion_id)
+    paciente_id = sesion.paciente.id  # Guardar el ID del paciente antes de borrar
+    sesion.delete()
+
+    # Actualizar la cantidad de sesiones del paciente
+    sesion.paciente.cantidad_sesiones -= 1
+    sesion.paciente.save()
+
+    messages.success(request, "Sesión eliminada correctamente.")
+    return redirect("detalle_paciente", id=paciente_id)
+
+def actualizar_asistencia(request, sesion_id):
+    if request.method == "POST":
+        sesion = get_object_or_404(Sesion, id=sesion_id)
+        asistencia = request.POST.get("asistencia") == "True"
+        sesion.asistencia = asistencia
+        sesion.save()
+        messages.success(request, "La asistencia se actualizó correctamente.")
+    return redirect("detalle_paciente", id=sesion.paciente.id)
+
+def guardar_asistencias(request, paciente_id):
+    if request.method == "POST":
+        paciente = get_object_or_404(Paciente, id=paciente_id)
+        sesiones = Sesion.objects.filter(paciente=paciente)
+        for sesion in sesiones:
+            asistencia = request.POST.get(f"asistencia_{sesion.id}") == "True"
+            sesion.asistencia = asistencia
+            sesion.save()
+        messages.success(request, "Las asistencias se actualizaron correctamente.")
+    return redirect("detalle_paciente", id=paciente_id)

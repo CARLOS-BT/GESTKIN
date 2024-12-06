@@ -1,12 +1,16 @@
 {% extends 'core/base.html' %}
+
 {% block content %}
 <div class="container mt-4">
     <div class="row">
-        <!-- Sección de detalles del paciente -->
+        <!-- Detalles del paciente -->
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header bg-primary">
-                    <h3 class="text-white">Detalle del Paciente</h3> <!-- Clase de Bootstrap para texto blanco -->
+                <div class="card-header bg-primary d-flex justify-content-between align-items-center">
+                    <h3 class="text-white">Detalle del Paciente</h3>
+                    <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#editarPacienteModal">
+                        <i class="fas fa-pencil-alt"></i>
+                    </button>
                 </div>
                 <div class="card-body">
                     <table class="table table-bordered">
@@ -30,39 +34,134 @@
                         </tr>
                     </table>
                 </div>
-                <div class="card-footer text-end">
-                    <a href="{% url 'editar_paciente' paciente.id %}" class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Editar
-                    </a>
+            </div>
+
+            <!-- Tabla de sesiones -->
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h4>Sesiones</h4>
+                    <form method="POST" class="d-flex align-items-center">
+                        {% csrf_token %}
+                        <input type="number" name="cantidad_nueva" min="1" class="form-control form-control-sm me-2 w-25" placeholder="Cantidad">
+                        <button type="submit" name="agregar_sesiones" class="btn btn-light btn-sm">Actualizar</button>
+                    </form>
+                </div>
+                <div class="card-body">
+                    {% if sesiones %}
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Asistencia</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sesion in sesiones %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ sesion.fecha }}</td>
+                                        <td>{{ sesion.hora }}</td>
+                                        <td>
+                                            {% if sesion.asistencia %}
+                                                <span class="badge bg-success">Asistió</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">No Asistió</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-primary me-2" data-bs-toggle="modal" data-bs-target="#editarSesionModal{{ sesion.id }}">
+                                                <i class="fas fa-pencil-alt"></i>
+                                            </button>
+                                            {% if not sesion.asistencia %}
+                                                <form method="POST" action="{% url 'eliminar_sesion' sesion.id %}" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar esta sesión?');">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </form>
+                                            {% else %}
+                                                <span class="text-muted">No se puede borrar</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <!-- Modal para editar sesión -->
+                                    <div class="modal fade" id="editarSesionModal{{ sesion.id }}" tabindex="-1" aria-labelledby="editarSesionModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="editarSesionModalLabel">Editar Sesión</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                                </div>
+                                                <form method="POST">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="sesion_id" value="{{ sesion.id }}">
+                                                    <div class="modal-body">
+                                                        <div class="mb-3">
+                                                            <label for="fecha" class="form-label">Fecha</label>
+                                                            <input type="date" class="form-control" name="fecha" value="{{ sesion.fecha }}">
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="hora" class="form-label">Hora</label>
+                                                            <input type="time" class="form-control" name="hora" value="{{ sesion.hora }}">
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="asistencia" class="form-label">Asistencia</label>
+                                                            <select class="form-control" name="asistencia">
+                                                                <option value="Sí" {% if sesion.asistencia %}selected{% endif %}>Sí</option>
+                                                                <option value="No" {% if not sesion.asistencia %}selected{% endif %}>No</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="submit" name="editar_sesion" class="btn btn-primary">Guardar Cambios</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-muted">No hay sesiones registradas.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Sección de archivos adjuntos -->
+        <!-- Archivos adjuntos -->
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header bg-secondary text-white">
                     Archivos Adjuntos
                 </div>
                 <div class="card-body">
-                    <!-- Formulario para subir archivo -->
+                    <!-- Subir archivo -->
                     <form method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
-                        {{ form.as_p }}
-                        <button type="submit" class="btn btn-success w-100 mb-3">
+                        <div class="mb-3">
+                            <label for="archivo" class="form-label">Seleccionar Archivo:</label>
+                            <input type="file" name="archivo" id="archivo" class="form-control">
+                        </div>
+                        <button type="submit" name="subir_archivo" class="btn btn-success w-100 mb-3">
                             <i class="fas fa-upload"></i> Subir Archivo
                         </button>
                     </form>
-
-                    <!-- Lista de archivos adjuntos -->
+                    <!-- Lista de archivos -->
                     {% if archivos %}
                         <ul class="list-group">
                             {% for archivo in archivos %}
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <a href="{{ archivo.archivo.url }}" target="_blank">{{ archivo.archivo.name }}</a>
-                                    <a href="{{ archivo.archivo.url }}" class="btn btn-sm btn-primary" download>
-                                        <i class="fas fa-download"></i>
-                                    </a>
+                                    <form method="POST" action="{% url 'eliminar_archivo' archivo.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar archivo?');">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
                                 </li>
                             {% endfor %}
                         </ul>
@@ -71,6 +170,27 @@
                     {% endif %}
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar paciente -->
+<div class="modal fade" id="editarPacienteModal" tabindex="-1" aria-labelledby="editarPacienteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editarPacienteModalLabel">Editar Paciente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    {{ form.as_p }}
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

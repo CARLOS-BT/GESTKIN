@@ -1,8 +1,7 @@
 {% extends 'core/base.html' %}
-
 {% block title %}Editar Paciente{% endblock %}
-
 {% block content %}
+
 <div class="container-fluid my-5 d-flex justify-content-center">
     <div class="w-100" style="max-width: 86%; font-family: 'Poppins', sans-serif;">
         <!-- Título -->
@@ -36,13 +35,9 @@
             <!-- Cantidad de Sesiones -->
             <div class="col-md-6">
                 <label for="cantidad_sesiones" class="form-label" style="font-size: 1.2rem;"><strong>Cantidad de Sesiones:</strong></label>
-                <div class="input-group">
-                    <input type="number" class="form-control" id="cantidad_sesiones" name="cantidad_sesiones" 
-                           value="{{ paciente.cantidad_sesiones }}" min="0" 
-                           style="font-size: 1.1rem; padding: 0.75rem; border-radius: 8px;" required>
-                    <button type="button" id="actualizar_sesiones" class="btn btn-info px-4 py-2" 
-                            style="font-size: 1rem; border-radius: 8px;">Actualizar</button>
-                </div>
+                <input type="number" class="form-control" id="cantidad_sesiones" name="cantidad_sesiones" 
+                       value="{{ paciente.cantidad_sesiones }}" min="0" 
+                       style="font-size: 1.1rem; padding: 0.75rem; border-radius: 8px;" required>
             </div>
 
             <!-- Sesiones dinámicas -->
@@ -73,79 +68,9 @@
                 <button type="submit" class="btn btn-primary px-5 py-3" 
                         style="font-size: 1.2rem; font-weight: bold; border-radius: 8px;">Guardar Cambios</button>
                 <a href="{% url 'lista_pacientes' %}" class="btn btn-secondary px-5 py-3" 
-                   style="font-size: 1.2rem; font-weight: bold; border-radius: 8px;">Cancelar</a>
+                   style="font-size: 1.2rem; font-weight: bold; border-radius: 8px;">Volver Lista de Pacientes</a>
             </div>
         </form>
     </div>
 </div>
-
-<script>
-    // Manejo dinámico de las sesiones
-    document.getElementById('actualizar_sesiones').addEventListener('click', function () {
-        const cantidadSesiones = document.getElementById('cantidad_sesiones').value;
-        const sesionesContainer = document.getElementById('sesiones-container');
-
-        // Limpia el contenedor de sesiones previas
-        sesionesContainer.innerHTML = '';
-
-        if (cantidadSesiones > 0) {
-            const title = document.createElement('h3');
-            title.className = 'text-primary mt-4';
-            title.style.fontSize = '1.5rem';
-            title.innerText = 'Sesiones';
-            sesionesContainer.appendChild(title);
-
-            for (let i = 1; i <= cantidadSesiones; i++) {
-                // Creación de los campos de fecha
-                const row = document.createElement('div');
-                row.className = 'row g-3 align-items-center mt-2';
-
-                const colFecha = document.createElement('div');
-                colFecha.className = 'col-md-6';
-
-                const labelFecha = document.createElement('label');
-                labelFecha.setAttribute('for', `fecha_${i}`);
-                labelFecha.className = 'form-label';
-                labelFecha.style.fontSize = '1.1rem';
-                labelFecha.innerText = `Fecha de Sesión ${i}`;
-                colFecha.appendChild(labelFecha);
-
-                const inputFecha = document.createElement('input');
-                inputFecha.type = 'date';
-                inputFecha.name = `fecha_${i}`;
-                inputFecha.id = `fecha_${i}`;
-                inputFecha.className = 'form-control';
-                inputFecha.style.fontSize = '1.1rem';
-                inputFecha.style.padding = '0.75rem';
-                inputFecha.style.borderRadius = '8px';
-                colFecha.appendChild(inputFecha);
-
-                // Creación de los campos de hora
-                const colHora = document.createElement('div');
-                colHora.className = 'col-md-6';
-
-                const labelHora = document.createElement('label');
-                labelHora.setAttribute('for', `hora_${i}`);
-                labelHora.className = 'form-label';
-                labelHora.style.fontSize = '1.1rem';
-                labelHora.innerText = `Hora de Sesión ${i}`;
-                colHora.appendChild(labelHora);
-
-                const inputHora = document.createElement('input');
-                inputHora.type = 'time';
-                inputHora.name = `hora_${i}`;
-                inputHora.id = `hora_${i}`;
-                inputHora.className = 'form-control';
-                inputHora.style.fontSize = '1.1rem';
-                inputHora.style.padding = '0.75rem';
-                inputHora.style.borderRadius = '8px';
-                colHora.appendChild(inputHora);
-
-                row.appendChild(colFecha);
-                row.appendChild(colHora);
-                sesionesContainer.appendChild(row);
-            }
-        }
-    });
-</script>
 {% endblock %}

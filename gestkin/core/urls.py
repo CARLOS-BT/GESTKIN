@@ -17,4 +17,6 @@ urlpatterns = [
     path('lista-pacientes/', views.lista_pacientes, name='lista_pacientes'),
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
     path("actualizar-estado-paciente/<int:paciente_id>/", views.actualizar_estado_paciente, name="actualizar_estado_paciente"),
+    path('eliminar-archivo/<int:archivo_id>/', views.eliminar_archivo, name='eliminar_archivo'),
+    path("eliminar-sesion/<int:sesion_id>/", views.eliminar_sesion, name="eliminar_sesion"),
 ]
