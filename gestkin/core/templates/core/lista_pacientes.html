@@ -3,9 +3,23 @@
 
 {% block content %}
 <div class="container-fluid my-5 d-flex justify-content-center">
-    <div class="w-100" style="max-width: 90%; font-family: 'Poppins', sans-serif;">
-        <!-- Título -->
+    <div class="w-100" style="max-width: 90%; font-family: 'Poppins', sans-serif;">  
         <h1 class="text-center fw-bold mb-4" style="color: #3301a8; font-size: 2.5rem;">Lista de Pacientes</h1>
+
+        <!-- Formulario de búsqueda -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <form method="GET" action="{% url 'lista_pacientes' %}" class="d-flex w-100">
+                <input type="text" name="q" value="{{ query }}" 
+                       class="form-control me-2" placeholder="Buscar por nombre, apellido o RUT"
+                       style="max-width: 300px;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+            </form>
+            <a href="{% url 'ingreso_pacientes' %}" class="btn btn-success btn-lg px-4 py-2">
+                <i class="fas fa-arrow-left"></i> Volver al Ingreso de Pacientes
+            </a>
+        </div>
 
         <!-- Tabla -->
         <div class="table-responsive mt-4">
@@ -47,16 +61,12 @@
                                 </select>
                             </form>
                         </td>
-
-                        <td class="text-center">
-                            <!-- Ajusta el tamaño de los botones 
-                            <a href="{% url 'editar_paciente' paciente.id %}" class="btn btn-xs btn-primary me-2 px-3 py-2">
-                                <i class="fas fa-edit"></i> Editar
-                            </a>-->
+                        <td class="text-center" style="width: 50px;">
                             <a href="{% url 'eliminar_paciente' paciente.id %}" 
-                               class="btn btn-xs btn-danger px-3 py-2"
+                               class="btn btn-danger btn-sm"
+                               style="padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%;"
                                onclick="return confirm('¿Estás seguro de que deseas eliminar este paciente?');">
-                                <i class="fas fa-trash-alt"></i> Eliminar
+                                <i class="fas fa-trash-alt"></i>
                             </a>
                         </td>
                         <td class="text-center">
@@ -72,13 +82,6 @@
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
-
-        <!-- Botón de regreso al costado derecho -->
-        <div class="d-flex justify-content-end mt-4">
-            <a href="{% url 'ingreso_pacientes' %}" class="btn btn-success btn-lg px-4 py-2" style="font-size: 1rem;">
-                <i class="fas fa-arrow-left"></i> Volver al Ingreso de Pacientes
-            </a>
         </div>
     </div>
 </div>

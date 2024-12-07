@@ -87,41 +87,42 @@
                                             {% endif %}
                                         </td>
                                     </tr>
-                                    <!-- Modal para editar sesión -->
-                                    <div class="modal fade" id="editarSesionModal{{ sesion.id }}" tabindex="-1" aria-labelledby="editarSesionModalLabel" aria-hidden="true">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title" id="editarSesionModalLabel">Editar Sesión</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                                                </div>
-                                                <form method="POST">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="sesion_id" value="{{ sesion.id }}">
-                                                    <div class="modal-body">
-                                                        <div class="mb-3">
-                                                            <label for="fecha" class="form-label">Fecha</label>
-                                                            <input type="date" class="form-control" name="fecha" value="{{ sesion.fecha }}">
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <label for="hora" class="form-label">Hora</label>
-                                                            <input type="time" class="form-control" name="hora" value="{{ sesion.hora }}">
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <label for="asistencia" class="form-label">Asistencia</label>
-                                                            <select class="form-control" name="asistencia">
-                                                                <option value="Sí" {% if sesion.asistencia %}selected{% endif %}>Sí</option>
-                                                                <option value="No" {% if not sesion.asistencia %}selected{% endif %}>No</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="submit" name="editar_sesion" class="btn btn-primary">Guardar Cambios</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
+<!-- Modal para editar sesión -->
+<div class="modal fade" id="editarSesionModal{{ sesion.id }}" tabindex="-1" aria-labelledby="editarSesionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editarSesionModalLabel">Editar Sesión</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="sesion_id" value="{{ sesion.id }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="fecha" class="form-label">Fecha</label>
+                        <input type="date" class="form-control" name="fecha" value="{{ sesion.fecha|date:'Y-m-d' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="hora" class="form-label">Hora</label>
+                        <input type="time" class="form-control" name="hora" value="{{ sesion.hora }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="asistencia" class="form-label">Asistencia</label>
+                        <select class="form-control" name="asistencia">
+                            <option value="Sí" {% if sesion.asistencia %}selected{% endif %}>Sí</option>
+                            <option value="No" {% if not sesion.asistencia %}selected{% endif %}>No</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" name="editar_sesion" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
                                 {% endfor %}
                             </tbody>
                         </table>

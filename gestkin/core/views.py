@@ -61,13 +61,19 @@ def ingreso_pacientes(request):
     })
 
 
+from django.db.models import Q
 
 def lista_pacientes(request):
-
-    pacientes = Paciente.objects.all().order_by('-created')  # Ordenar por fecha de creación
-    return render(request, 'core/lista_pacientes.html', {'pacientes': pacientes})
-
-
+    query = request.GET.get('q', '')  # Término de búsqueda
+    if query:
+        pacientes = Paciente.objects.filter(
+            Q(nombre__icontains=query) |
+            Q(apellido__icontains=query) |
+            Q(rut__icontains=query)
+        ).order_by('-created')
+    else:
+        pacientes = Paciente.objects.all().order_by('-created')
+    return render(request, 'core/lista_pacientes.html', {'pacientes': pacientes, 'query': query})
 
 def login_view(request):
     """
@@ -144,6 +150,8 @@ def eliminar_paciente(request, id):
     return redirect('lista_pacientes')
 
 
+from django.core.exceptions import ValidationError
+
 def detalle_paciente(request, id):
     paciente = get_object_or_404(Paciente, id=id)
     sesiones = Sesion.objects.filter(paciente=paciente).order_by("fecha", "hora")
@@ -158,12 +166,21 @@ def detalle_paciente(request, id):
             asistencia = request.POST.get("asistencia") == "Sí"
 
             sesion = get_object_or_404(Sesion, id=sesion_id)
-            sesion.fecha = fecha
-            sesion.hora = hora
-            sesion.asistencia = asistencia
-            sesion.save()
 
-            messages.success(request, "Sesión actualizada correctamente.")
+            # Validar campos antes de guardar
+            if fecha and hora:
+                sesion.fecha = fecha
+                sesion.hora = hora
+                sesion.asistencia = asistencia
+                try:
+                    sesion.full_clean()  # Validar el modelo antes de guardar
+                    sesion.save()
+                    messages.success(request, "Sesión actualizada correctamente.")
+                except ValidationError as e:
+                    messages.error(request, f"Error al actualizar la sesión: {e}")
+            else:
+                messages.error(request, "La fecha y la hora son obligatorias.")
+            
             return redirect("detalle_paciente", id=id)
 
         # Agregar nuevas sesiones
@@ -203,6 +220,7 @@ def detalle_paciente(request, id):
         "archivos": archivos,
         "form": form,
     })
+
 
 def eliminar_archivo(request, archivo_id):
     archivo = get_object_or_404(ArchivoPaciente, id=archivo_id)
