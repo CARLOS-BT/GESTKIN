@@ -43,7 +43,7 @@
                     <form method="POST" class="d-flex align-items-center">
                         {% csrf_token %}
                         <input type="number" name="cantidad_nueva" min="1" class="form-control form-control-sm me-2 w-25" placeholder="Cantidad">
-                        <button type="submit" name="agregar_sesiones" class="btn btn-light btn-sm">Actualizar</button>
+                        <button type="submit" name="agregar_sesiones" class="btn btn-light btn-sm">Añadir sesión</button>
                     </form>
                 </div>
                 <div class="card-body">
@@ -51,7 +51,7 @@
                         <table class="table table-bordered">
                             <thead>
                                 <tr>
-                                    <th>#</th>
+                                    <th>N°</th>
                                     <th>Fecha</th>
                                     <th>Hora</th>
                                     <th>Asistencia</th>
@@ -168,6 +168,11 @@
                     {% else %}
                         <p class="text-muted">No hay archivos adjuntos.</p>
                     {% endif %}
+
+                    <!-- Botón para redirigir a la vista de ingresar paciente -->
+                    <a href="{% url 'ingreso_pacientes' %}" class="btn btn-primary w-100 mt-3">
+                        <i class="fas fa-user-plus"></i> Ingresar Nuevo Paciente
+                    </a>
                 </div>
             </div>
         </div>
@@ -182,9 +187,10 @@
                 <h5 class="modal-title" id="editarPacienteModalLabel">Editar Paciente</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <form method="POST">
+            <form method="POST" action="{% url 'editar_paciente' paciente.id %}">
                 {% csrf_token %}
                 <div class="modal-body">
+                    <!-- Renderizar campos del formulario -->
                     {{ form.as_p }}
                 </div>
                 <div class="modal-footer">
@@ -194,4 +200,5 @@
         </div>
     </div>
 </div>
+
 {% endblock %}

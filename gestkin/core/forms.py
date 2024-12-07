@@ -8,13 +8,14 @@ from .models import ArchivoPaciente
 class PacienteForm(forms.ModelForm):
     class Meta:
         model = Paciente
-        fields = ['nombre', 'apellido', 'rut', 'observaciones', 'patologia']
+        fields = ['nombre', 'apellido', 'rut', 'observaciones', 'patologia', 'cantidad_sesiones']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'apellido': forms.TextInput(attrs={'class': 'form-control'}),
             'rut': forms.TextInput(attrs={'class': 'form-control'}),
             'observaciones': forms.Textarea(attrs={'class': 'form-control'}),
             'patologia': forms.Textarea(attrs={'class': 'form-control'}),
+            'cantidad_sesiones': forms.NumberInput(attrs={'class': 'form-control'}),
         }
 
 class SesionForm(forms.ModelForm):

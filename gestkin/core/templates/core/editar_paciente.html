@@ -2,75 +2,56 @@
 {% block title %}Editar Paciente{% endblock %}
 {% block content %}
 
-<div class="container-fluid my-5 d-flex justify-content-center">
-    <div class="w-100" style="max-width: 86%; font-family: 'Poppins', sans-serif;">
-        <!-- Título -->
-        <h2 class="text-center text-primary mb-4" style="font-size: 2.2rem; font-weight: bold;">Editar Información del Paciente</h2>
+<div class="container my-5">
+    <h2 class="text-primary text-center">Editar Información del Paciente</h2>
+    <form method="post" action="{% url 'editar_paciente' paciente.id %}">
+        {% csrf_token %}
 
-        <!-- Formulario -->
-        <form method="post" action="{% url 'editar_paciente' paciente.id %}" class="row g-4">
-            {% csrf_token %}
-
-            <!-- Nombre -->
+        <!-- Campos del Paciente -->
+        <div class="row mb-4">
             <div class="col-md-6">
-                <label for="nombre" class="form-label" style="font-size: 1.2rem;"><strong>Nombre:</strong></label>
-                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ paciente.nombre }}" 
-                       style="font-size: 1.1rem; padding: 0.75rem; border-radius: 8px;" required>
+                <label for="nombre" class="form-label">Nombre:</label>
+                {{ form.nombre }}
             </div>
-
-            <!-- Apellido -->
             <div class="col-md-6">
-                <label for="apellido" class="form-label" style="font-size: 1.2rem;"><strong>Apellido:</strong></label>
-                <input type="text" class="form-control" id="apellido" name="apellido" value="{{ paciente.apellido }}" 
-                       style="font-size: 1.1rem; padding: 0.75rem; border-radius: 8px;" required>
+                <label for="apellido" class="form-label">Apellido:</label>
+                {{ form.apellido }}
             </div>
-
-            <!-- RUT -->
             <div class="col-md-6">
-                <label for="rut" class="form-label" style="font-size: 1.2rem;"><strong>RUT:</strong></label>
-                <input type="text" class="form-control" id="rut" name="rut" value="{{ paciente.rut }}" 
-                       style="font-size: 1.1rem; padding: 0.75rem; border-radius: 8px;" required>
+                <label for="rut" class="form-label">RUT:</label>
+                {{ form.rut }}
             </div>
-
-            <!-- Cantidad de Sesiones -->
             <div class="col-md-6">
-                <label for="cantidad_sesiones" class="form-label" style="font-size: 1.2rem;"><strong>Cantidad de Sesiones:</strong></label>
-                <input type="number" class="form-control" id="cantidad_sesiones" name="cantidad_sesiones" 
-                       value="{{ paciente.cantidad_sesiones }}" min="0" 
-                       style="font-size: 1.1rem; padding: 0.75rem; border-radius: 8px;" required>
+                <label for="cantidad_sesiones" class="form-label">Cantidad de Sesiones:</label>
+                <input type="number" name="cantidad_sesiones" id="cantidad_sesiones" 
+                       value="{{ paciente.cantidad_sesiones }}" class="form-control" min="1" required>
             </div>
+        </div>
 
-            <!-- Sesiones dinámicas -->
-            <div id="sesiones-container" class="col-12">
-                {% if sesiones %}
-                <h3 class="text-primary mt-4" style="font-size: 1.5rem;">Sesiones</h3>
-                {% for sesion in sesiones %}
-                <div class="row g-3 align-items-center mt-2">
-                    <div class="col-md-6">
-                        <label for="fecha_{{ sesion.index }}" class="form-label" style="font-size: 1.1rem;">Fecha de Sesión {{ sesion.index }}</label>
-                        <input type="date" name="fecha_{{ sesion.index }}" id="fecha_{{ sesion.index }}" 
-                               class="form-control" value="{{ sesion.fecha }}" 
-                               style="font-size: 1.1rem; padding: 0.75rem; border-radius: 8px;">
-                    </div>
-                    <div class="col-md-6">
-                        <label for="hora_{{ sesion.index }}" class="form-label" style="font-size: 1.1rem;">Hora de Sesión {{ sesion.index }}</label>
-                        <input type="time" name="hora_{{ sesion.index }}" id="hora_{{ sesion.index }}" 
-                               class="form-control" value="{{ sesion.hora }}" 
-                               style="font-size: 1.1rem; padding: 0.75rem; border-radius: 8px;">
-                    </div>
+        <!-- Sesiones Dinámicas -->
+        <h4 class="text-primary mt-4">Sesiones</h4>
+        <div id="sesiones-container">
+            {% for sesion in sesiones %}
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="fecha_{{ forloop.counter }}">Fecha Sesión {{ forloop.counter }}</label>
+                    <input type="date" name="fecha_{{ forloop.counter }}" id="fecha_{{ forloop.counter }}" 
+                           value="{{ sesion.fecha }}" class="form-control">
                 </div>
-                {% endfor %}
-                {% endif %}
+                <div class="col-md-6">
+                    <label for="hora_{{ forloop.counter }}">Hora Sesión {{ forloop.counter }}</label>
+                    <input type="time" name="hora_{{ forloop.counter }}" id="hora_{{ forloop.counter }}" 
+                           value="{{ sesion.hora }}" class="form-control">
+                </div>
             </div>
+            {% endfor %}
+        </div>
 
-            <!-- Botones -->
-            <div class="col-12 d-flex justify-content-between mt-4">
-                <button type="submit" class="btn btn-primary px-5 py-3" 
-                        style="font-size: 1.2rem; font-weight: bold; border-radius: 8px;">Guardar Cambios</button>
-                <a href="{% url 'lista_pacientes' %}" class="btn btn-secondary px-5 py-3" 
-                   style="font-size: 1.2rem; font-weight: bold; border-radius: 8px;">Volver Lista de Pacientes</a>
-            </div>
-        </form>
-    </div>
+        <!-- Botón para guardar -->
+        <div class="d-flex justify-content-center mt-4">
+            <button type="submit" class="btn btn-primary px-5 py-2">Guardar Cambios</button>
+        </div>
+    </form>
 </div>
+
 {% endblock %}
