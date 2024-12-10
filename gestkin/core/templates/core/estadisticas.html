@@ -1,0 +1,146 @@
+{% extends 'core/base.html' %}
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadísticas de Pacientes</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin: 20px auto;
+            padding: 30px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #4CAF50;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .form-section {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .form-control, .form-select {
+            border-radius: 8px;
+        }
+        .table th {
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+        }
+        .table tbody tr.en-proceso {
+            background-color: #fff8db; /* Amarillo claro */
+        }
+        .table tbody tr.no-terminado {
+            background-color: #ffe5e5; /* Rojo claro */
+        }
+        .table tbody tr.terminado {
+            background-color: #e7fbe7; /* Verde claro */
+        }
+        .chart-container {
+            margin-top: 40px;
+            text-align: center;
+        }
+        .chart-container h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .download-btn {
+            margin-top: 20px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Estadísticas de Pacientes</h1>
+
+        <!-- Sección de Filtros -->
+        <div class="form-section">
+            <form method="GET" class="row">
+                <div class="col-md-4">
+                    <label for="run" class="form-label">Buscar por RUN:</label>
+                    <input type="text" id="run" name="run" class="form-control" value="{{ filtros.run }}" placeholder="Ej: 12345678-9">
+                </div>
+                <div class="col-md-4">
+                    <label for="estado" class="form-label">Filtrar por Estado:</label>
+                    <select id="estado" name="estado" class="form-select">
+                        <option value="" {% if not filtros.estado %}selected{% endif %}>Todos</option>
+                        <option value="En Proceso" {% if filtros.estado == "En Proceso" %}selected{% endif %}>En Proceso</option>
+                        <option value="No Terminado" {% if filtros.estado == "No Terminado" %}selected{% endif %}>No Terminado</option>
+                        <option value="Terminado" {% if filtros.estado == "Terminado" %}selected{% endif %}>Terminado</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="fecha_inicio" class="form-label">Filtrar por Fecha:</label>
+                    <div class="d-flex">
+                        <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control me-2" value="{{ filtros.fecha_inicio }}">
+                        <input type="date" id="fecha_fin" name="fecha_fin" class="form-control" value="{{ filtros.fecha_fin }}">
+                    </div>
+                </div>
+                <div class="col-md-12 text-end mt-3">
+                    <button type="submit" class="btn btn-primary px-4">Aplicar Filtros</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Botón para Descargar el PDF -->
+        <div class="download-btn">
+            <a href="{% url 'descargar_informe' %}?run={{ filtros.run }}&estado={{ filtros.estado }}&fecha_inicio={{ filtros.fecha_inicio }}&fecha_fin={{ filtros.fecha_fin }}" 
+               class="btn btn-success">
+                Descargar Informe (PDF)
+            </a>
+        </div>
+
+        <!-- Tabla de Distribución -->
+        <div class="table-section">
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>Estado</th>
+                        <th>Total Pacientes</th>
+                        <th>Porcentaje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for estado in estados_distribucion %}
+                    <tr class="
+                        {% if estado.estado == 'En Proceso' %}en-proceso{% endif %}
+                        {% if estado.estado == 'No Terminado' %}no-terminado{% endif %}
+                        {% if estado.estado == 'Terminado' %}terminado{% endif %}
+                    ">
+                        <td class="text-center">{{ estado.estado }}</td>
+                        <td class="text-center">{{ estado.total }}</td>
+                        <td class="text-center">{{ estado.porcentaje|floatformat:2 }}%</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center">No hay datos disponibles</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Gráfico de Distribución -->
+        <div class="chart-container">
+            <h2>Gráfico de estado de Pacientes</h2>
+            <img src="data:image/png;base64,{{ grafico_base64 }}" alt="Gráfico de Distribución" class="img-fluid rounded">
+        </div>
+    </div>
+</body>
+</html>
+
+{% endblock %}
+

@@ -1,7 +1,7 @@
 """
 URL configuration for gestkin project.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
+The `urlpatterns` list routes URLs to views. For more informataciente_id>/',ion please see:
     https://docs.djangoproject.com/en/5.1/topics/http/urls/
 Examples:
 Function views
@@ -31,6 +31,7 @@ urlpatterns = [
     path('inicio/', views.login_view, name='inicio'),  # Agregar la ruta /inicio
     path('logout/', LogoutView.as_view(), name='logout'),  # Ruta para cerrar sesión
     path('editar-paciente/<int:id>/', views.editar_paciente, name='editar_paciente'),
+    #path('eliminar-paciente/<int:p views.eliminar_paciente, name='eliminar_paciente'),
     path('eliminar-paciente/<int:paciente_id>/', views.eliminar_paciente, name='eliminar_paciente'),
     path('detalle-paciente/<int:id>/', views.detalle_paciente, name='detalle_paciente'),
     path("actualizar-estado-paciente/<int:paciente_id>/", views.actualizar_estado_paciente, name="actualizar_estado_paciente"),
@@ -38,6 +39,9 @@ urlpatterns = [
     path("actualizar-asistencia/<int:sesion_id>/", views.actualizar_asistencia, name="actualizar_asistencia"),
     path('guardar-asistencias/<int:paciente_id>/', views.guardar_asistencias, name='guardar_asistencias'),
     path("eliminar-sesion/<int:sesion_id>/", views.eliminar_sesion, name="eliminar_sesion"),
+    path("estadisticas/", views.estadisticas, name="estadisticas"),
+    path("descargar-informe/", views.descargar_informe, name="descargar_informe"),
+    path('estadisticas/descargar/', views.descargar_informe, name='descargar_informe'),
     ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Agregar manejo de archivos de medios en modo DEBUG

@@ -8,6 +8,7 @@
             <div class="card">
                 <div class="card-header bg-primary d-flex justify-content-between align-items-center">
                     <h3 class="text-white">Detalle del Paciente</h3>
+                    <!-- Botón para abrir el modal de edición del paciente -->
                     <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#editarPacienteModal">
                         <i class="fas fa-pencil-alt"></i>
                     </button>
@@ -55,6 +56,7 @@
                                     <th>Fecha</th>
                                     <th>Hora</th>
                                     <th>Asistencia</th>
+                                    <th>Comentario</th> <!-- Nueva columna -->
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -71,11 +73,15 @@
                                                 <span class="badge bg-danger">No Asistió</span>
                                             {% endif %}
                                         </td>
+                                        <td>{{ sesion.comentario_asistencia|default:"Sin comentario" }}</td> <!-- Mostrar comentario -->
                                         <td>
+                                            <!-- Botón para editar sesión -->
                                             <button class="btn btn-sm btn-primary me-2" data-bs-toggle="modal" data-bs-target="#editarSesionModal{{ sesion.id }}">
                                                 <i class="fas fa-pencil-alt"></i>
                                             </button>
+
                                             {% if not sesion.asistencia %}
+                                                <!-- Formulario para eliminar la sesión -->
                                                 <form method="POST" action="{% url 'eliminar_sesion' sesion.id %}" style="display: inline;">
                                                     {% csrf_token %}
                                                     <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar esta sesión?');">
@@ -87,42 +93,46 @@
                                             {% endif %}
                                         </td>
                                     </tr>
-<!-- Modal para editar sesión -->
-<div class="modal fade" id="editarSesionModal{{ sesion.id }}" tabindex="-1" aria-labelledby="editarSesionModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editarSesionModalLabel">Editar Sesión</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <form method="POST">
-                {% csrf_token %}
-                <input type="hidden" name="sesion_id" value="{{ sesion.id }}">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="fecha" class="form-label">Fecha</label>
-                        <input type="date" class="form-control" name="fecha" value="{{ sesion.fecha|date:'Y-m-d' }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="hora" class="form-label">Hora</label>
-                        <input type="time" class="form-control" name="hora" value="{{ sesion.hora }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="asistencia" class="form-label">Asistencia</label>
-                        <select class="form-control" name="asistencia">
-                            <option value="Sí" {% if sesion.asistencia %}selected{% endif %}>Sí</option>
-                            <option value="No" {% if not sesion.asistencia %}selected{% endif %}>No</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" name="editar_sesion" class="btn btn-primary">Guardar Cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
+                                    <!-- Modal para editar sesión -->
+                                    <div class="modal fade" id="editarSesionModal{{ sesion.id }}" tabindex="-1" aria-labelledby="editarSesionModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="editarSesionModalLabel">Editar Sesión</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                                </div>
+                                                <form method="POST">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="sesion_id" value="{{ sesion.id }}">
+                                                    <div class="modal-body">
+                                                        <div class="mb-3">
+                                                            <label for="fecha" class="form-label">Fecha</label>
+                                                            <input type="date" class="form-control" name="fecha" value="{{ sesion.fecha|date:'Y-m-d' }}" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="hora" class="form-label">Hora</label>
+                                                            <input type="time" class="form-control" name="hora" value="{{ sesion.hora }}" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="asistencia" class="form-label">Asistencia</label>
+                                                            <select class="form-control" name="asistencia">
+                                                                <option value="Sí" {% if sesion.asistencia %}selected{% endif %}>Sí</option>
+                                                                <option value="No" {% if not sesion.asistencia %}selected{% endif %}>No</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="comentario_asistencia" class="form-label">Comentario</label>
+                                                            <textarea class="form-control" name="comentario_asistencia" rows="2">{{ sesion.comentario_asistencia }}</textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="submit" name="editar_sesion" class="btn btn-primary">Guardar Cambios</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -140,7 +150,6 @@
                     Archivos Adjuntos
                 </div>
                 <div class="card-body">
-                    <!-- Subir archivo -->
                     <form method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="mb-3">
@@ -151,7 +160,6 @@
                             <i class="fas fa-upload"></i> Subir Archivo
                         </button>
                     </form>
-                    <!-- Lista de archivos -->
                     {% if archivos %}
                         <ul class="list-group">
                             {% for archivo in archivos %}
@@ -160,7 +168,7 @@
                                     <form method="POST" action="{% url 'eliminar_archivo' archivo.id %}" style="display: inline;">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar archivo?');">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </form>
                                 </li>
@@ -170,7 +178,6 @@
                         <p class="text-muted">No hay archivos adjuntos.</p>
                     {% endif %}
 
-                    <!-- Botón para redirigir a la vista de ingresar paciente -->
                     <a href="{% url 'ingreso_pacientes' %}" class="btn btn-primary w-100 mt-3">
                         <i class="fas fa-user-plus"></i> Ingresar Nuevo Paciente
                     </a>
@@ -191,7 +198,6 @@
             <form method="POST" action="{% url 'editar_paciente' paciente.id %}">
                 {% csrf_token %}
                 <div class="modal-body">
-                    <!-- Renderizar campos del formulario -->
                     {{ form.as_p }}
                 </div>
                 <div class="modal-footer">
@@ -201,5 +207,4 @@
         </div>
     </div>
 </div>
-
 {% endblock %}

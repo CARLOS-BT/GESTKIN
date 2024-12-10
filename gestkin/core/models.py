@@ -39,7 +39,8 @@ class Sesion(models.Model):
     fecha = models.DateField(verbose_name="Fecha de la Sesión", default=date.today)
     hora = models.TimeField(verbose_name="Hora de la Sesión", default="00:00")
     asistencia = models.BooleanField(default=False, verbose_name="Asistencia")
-    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")  # No se modifica
+    comentario_asistencia = models.TextField(blank=True, null=True, verbose_name="Comentario de Asistencia")  # Nuevo campo
     estado = models.CharField(
         max_length=20,
         choices=[
@@ -57,7 +58,7 @@ class Sesion(models.Model):
 
     def __str__(self):
         return f"Sesión de {self.paciente.nombre} el {self.fecha} a las {self.hora}"
-    
+   
 class ArchivoPaciente(models.Model):
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name="archivos")
     archivo = models.FileField(upload_to="archivos_pacientes/")
