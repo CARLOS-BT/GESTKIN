@@ -41,7 +41,10 @@ urlpatterns = [
     path("eliminar-sesion/<int:sesion_id>/", views.eliminar_sesion, name="eliminar_sesion"),
     path("estadisticas/", views.estadisticas, name="estadisticas"),
     path("descargar-informe/", views.descargar_informe, name="descargar_informe"),
-    path('estadisticas/descargar/', views.descargar_informe, name='descargar_informe'),
+    #path('estadisticas/descargar/', views.descargar_informe, name='descargar_informe'),
+    path('estadisticas/reporte_pdf/', views.generar_reporte_pdf, name='generar_reporte_pdf'),
+    path('buscar-paciente/', views.buscar_paciente, name='buscar_paciente'),
+    path('editar-sesion/<int:sesion_id>/', views.editar_sesion, name='editar_sesion'),
     ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Agregar manejo de archivos de medios en modo DEBUG

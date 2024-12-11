@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Estadísticas</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1, h2, h3 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #4CAF50; color: white; }
+    </style>
+</head>
+<body>
+    <h1>Reporte de Estadísticas</h1>
+    <p><strong>RUN:</strong> {{ run|default:"Todos" }}</p>
+    <p><strong>Nombre:</strong> {{ nombre|default:"Todos" }}</p>
+    <p><strong>Estado:</strong> {{ estado|default:"Todos" }}</p>
+    <p><strong>Rango de Fechas:</strong> {{ fecha_inicio|default:"No especificado" }} - {{ fecha_fin|default:"No especificado" }}</p>
+
+    <h2>Resumen de Pacientes</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Estado</th>
+                <th>Total Pacientes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in estadisticas_estado %}
+            <tr>
+                <td>{{ item.estado }}</td>
+                <td>{{ item.total }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Resumen de Asistencia</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Asistencia</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Asistieron</td>
+                <td>{{ asistencia_data.asistieron }}</td>
+            </tr>
+            <tr>
+                <td>No Asistieron</td>
+                <td>{{ asistencia_data.no_asistieron }}</td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

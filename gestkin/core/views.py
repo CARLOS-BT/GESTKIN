@@ -1,32 +1,30 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.forms import formset_factory  # Se usa en algún formulario dinámico
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse, HttpResponse
-from django.db.models import Count, Q, Avg  # Se usan para las consultas y estadísticas
-from django.core.exceptions import ValidationError  # Se usa en la validación de RUT
-from django.utils.timezone import now
-from .forms import PacienteForm, SesionFormSet, ArchivoPacienteForm
-from .models import Paciente, Sesion, ArchivoPaciente
-from datetime import datetime, timedelta, date
-import matplotlib.pyplot as plt  # Para generar el gráfico
-import base64  # Para convertir el gráfico a base64
-from io import BytesIO  # Manejo de datos en memoria
-from PIL import Image  # Para procesar imágenes (gráfico en PDF)
-from reportlab.lib.pagesizes import letter  # Tamaño de página para PDF
-from reportlab.pdfgen import canvas  # Generar el PDF
-from reportlab.platypus import Table, TableStyle  # Crear tablas en ReportLab
-from reportlab.lib import colors  # Estilizar tablas en ReportLab
-import re  # Para la validación del RUT
+# Librerías de Python estándar
+from datetime import datetime, timedelta
 import io
-from io import BytesIO
-from django.http import HttpResponse
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
+import base64
+# Librerías de terceros
+import matplotlib
 import matplotlib.pyplot as plt
 from PIL import Image
-# Asegurarse de usar un backend no interactivo para Matplotlib
+from django.http import HttpResponse, JsonResponse
+from django.template.loader import get_template, render_to_string
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
+from django.views.decorators.csrf import csrf_exempt
+from xhtml2pdf import pisa  # Instala con: pip install xhtml2pdf
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
+from django.db.models import Avg, Count, Q
+# Importaciones locales (modelos y formularios de la aplicación)
+from .models import Paciente, Sesion, ArchivoPaciente
+from .forms import PacienteForm
+from django.views.decorators.http import require_POST
 import matplotlib
+matplotlib.use('Agg')  # Configurar backend no interactivo
+import matplotlib.pyplot as plt
 
 
 def ingreso_pacientes(request):
@@ -76,17 +74,29 @@ def ingreso_pacientes(request):
         'sesiones': sesiones,
     })
 
+
 def lista_pacientes(request):
-    query = request.GET.get('q', '')  # Término de búsqueda
+    query = request.GET.get('q', '')  # Obtener el término de búsqueda
+    pacientes = Paciente.objects.all().order_by('-created')
+
+    # Filtrar por búsqueda si hay un término
     if query:
-        pacientes = Paciente.objects.filter(
+        pacientes = pacientes.filter(
             Q(nombre__icontains=query) |
             Q(apellido__icontains=query) |
             Q(rut__icontains=query)
-        ).order_by('-created')
-    else:
-        pacientes = Paciente.objects.all().order_by('-created')
-    return render(request, 'core/lista_pacientes.html', {'pacientes': pacientes, 'query': query})
+        )
+
+    # Paginación: dividir pacientes en páginas de 10 elementos
+    paginator = Paginator(pacientes, 10)  # 10 pacientes por página
+    page_number = request.GET.get('page')  # Obtener el número de página actual
+    page_obj = paginator.get_page(page_number)  # Obtener la página actual
+
+    return render(request, 'core/lista_pacientes.html', {
+        'query': query,
+        'page_obj': page_obj,  # Pasar la página actual al template
+    })
+  
 
 def login_view(request):
     """
@@ -166,13 +176,8 @@ def eliminar_paciente(request, paciente_id):
     # Redirigir a la lista de pacientes con un mensaje opcional
     return redirect('lista_pacientes')
 
-from datetime import datetime, timedelta
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-from django.core.exceptions import ValidationError
-from .models import Paciente, Sesion, ArchivoPaciente
-from .forms import PacienteForm
 
+@csrf_exempt
 def detalle_paciente(request, id):
     paciente = get_object_or_404(Paciente, id=id)
     sesiones = Sesion.objects.filter(paciente=paciente).order_by("fecha", "hora")
@@ -295,9 +300,56 @@ def guardar_asistencias(request, paciente_id):
         messages.success(request, "Las asistencias se actualizaron correctamente.")
     return redirect("detalle_paciente", id=paciente_id)
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages  # Para las alertas
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages  # Para mostrar mensajes de error o éxito
+from .models import Sesion
 
-from django.core.exceptions import ValidationError
+def editar_sesion(request, sesion_id):
+    sesion = get_object_or_404(Sesion, id=sesion_id)
+
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        fecha = request.POST.get('fecha')
+        hora = request.POST.get('hora')
+        comentario = request.POST.get('comentario')
+        asistencia = request.POST.get('asistencia')
+
+        # Validaciones
+        errores = {}
+        if not fecha:
+            errores['fecha'] = "La fecha es obligatoria."
+        if not hora:
+            errores['hora'] = "La hora es obligatoria."
+        if not comentario:
+            errores['comentario'] = "El comentario es obligatorio."
+        if asistencia not in ['0', '1']:
+            errores['asistencia'] = "Selecciona una opción válida para asistencia."
+
+        # Si hay errores, renderizar la página con el modal abierto
+        if errores:
+            return render(request, 'core/detalle_paciente.html', {
+                'paciente': sesion.paciente,
+                'sesiones': Sesion.objects.filter(paciente=sesion.paciente),
+                'errores': errores,
+                'sesion_id': sesion.id  # Para mantener el modal abierto en el frontend
+            })
+
+        # Guardar los datos si todo es válido
+        sesion.fecha = fecha
+        sesion.hora = hora
+        sesion.comentario_asistencia = comentario
+        sesion.asistencia = asistencia == '1'  # Convierte "1" a True y "0" a False
+        sesion.save()
+
+        messages.success(request, "Sesión actualizada exitosamente.")
+        return redirect('detalle_paciente', paciente_id=sesion.paciente.id)
+
+    return render(request, 'core/detalle_paciente.html', {'paciente': sesion.paciente})
+
+      # return redirect('detalle_paciente', id=sesion.paciente.id)  # Ajusta esta redirección según tu proyecto 
 
 def calcular_digito_verificador(rut_sin_dv):
     suma = 0
@@ -319,11 +371,8 @@ def validar_rut(value):
     if dv.lower() != calcular_digito_verificador(rut):
         raise ValidationError("El dígito verificador del RUT ingresado no es válido.")
     
-    from django.db.models import Avg, Count, Q
 
 def obtener_estadisticas():
-    from .models import Paciente, Sesion
-
     total_pacientes = Paciente.objects.count()
     estados_distribucion = Paciente.objects.values("estado").annotate(total=Count("estado"))
     promedio_sesiones = Paciente.objects.aggregate(promedio=Avg("cantidad_sesiones"))["promedio"] or 0
@@ -344,131 +393,208 @@ def obtener_estadisticas():
         "top_pacientes": top_pacientes,
     }
 
-def estadisticas(request):
-    # Obtener filtros
-    run = request.GET.get("run", "").strip()
-    estado = request.GET.get("estado", "")
-    fecha_inicio = request.GET.get("fecha_inicio", "")
-    fecha_fin = request.GET.get("fecha_fin", "")
 
-    # Aplicar filtros
+def estadisticas(request):
+    run = request.GET.get('run', '')
+    nombre = request.GET.get('nombre', '')
+    estado = request.GET.get('estado', '')
+    fecha_inicio = request.GET.get('fecha_inicio', '')
+    fecha_fin = request.GET.get('fecha_fin', '')
+
+    # Filtrar pacientes según los criterios de búsqueda
     pacientes = Paciente.objects.all()
     if run:
         pacientes = pacientes.filter(rut__icontains=run)
-    if estado:
+    if nombre:
+        pacientes = pacientes.filter(nombre__icontains=nombre)
+    if estado and estado != 'Todas':
         pacientes = pacientes.filter(estado=estado)
     if fecha_inicio and fecha_fin:
-        pacientes = pacientes.filter(created__date__range=[fecha_inicio, fecha_fin])
+        pacientes = pacientes.filter(sesiones__fecha__range=[fecha_inicio, fecha_fin]).distinct()
 
-    # Calcular datos para la tabla
+    # Obtener sesiones asociadas
+    sesiones = Sesion.objects.filter(paciente__in=pacientes).order_by('fecha')
+
+    # Calcular estadísticas
+    estadisticas_estado = pacientes.values('estado').annotate(total=Count('id'))
     total_pacientes = pacientes.count()
-    estados_distribucion = pacientes.values("estado").annotate(total=Count("estado"))
-    for estado in estados_distribucion:
-        estado["porcentaje"] = (estado["total"] / total_pacientes * 100) if total_pacientes > 0 else 0
+    asistencia_data = {
+        "asistieron": sesiones.filter(asistencia=True).count(),
+        "no_asistieron": sesiones.filter(asistencia=False).count(),
+    }
 
-    # Ordenar los datos para garantizar el orden de colores
-    estado_labels = ["En Proceso", "No Terminado", "Terminado"]
-    colores = {"En Proceso": "#FFC107", "No Terminado": "#FF5722", "Terminado": "#4CAF50"}  # Amarillo, Rojo, Verde
-    labels = []
-    totals = []
-    bar_colors = []
+    # Generar gráfico en base64
+    grafico_base64 = generar_grafico(estadisticas_estado)
 
-    for label in estado_labels:
-        estado = next((e for e in estados_distribucion if e["estado"] == label), None)
-        if estado:
-            labels.append(label)
-            totals.append(estado["total"])
-            bar_colors.append(colores[label])
+    # Renderizar plantilla con contexto
+    return render(request, 'core/estadisticas.html', {
+        "pacientes": pacientes,
+        "sesiones": sesiones,
+        "estadisticas_estado": estadisticas_estado,
+        "asistencia_data": asistencia_data,
+        "grafico_base64": grafico_base64,
+        "run": run,
+        "nombre": nombre,
+        "estado": estado,
+        "fecha_inicio": fecha_inicio,
+        "fecha_fin": fecha_fin,
+    })
 
-    # Generar gráfico con Matplotlib
-    plt.figure(figsize=(6, 4))
-    plt.bar(labels, totals, color=bar_colors)
-    plt.title("Distribución de Pacientes")
-    plt.xlabel("Estados")
-    plt.ylabel("Total de Pacientes")
+
+
+def generate_chart(estadisticas_estado):
+    """
+    Genera un gráfico de barras basado en las estadísticas de estado de los pacientes.
+    Convierte el gráfico en formato base64 para usarlo en la plantilla HTML.
+    """
+    labels = [item['estado'] for item in estadisticas_estado]
+    values = [item['total'] for item in estadisticas_estado]
+
+    plt.figure(figsize=(8, 5))
+    plt.bar(labels, values, color=['#4CAF50', '#FFC107', '#FF5722'])  # Verde, amarillo, rojo
+    plt.xlabel('Estado')
+    plt.ylabel('Cantidad de Pacientes')
+    plt.title('Distribución de Pacientes por Estado')
     plt.tight_layout()
 
-    # Convertir gráfico a base64
+    # Convertir el gráfico a base64
     buffer = io.BytesIO()
-    plt.savefig(buffer, format="png")
+    plt.savefig(buffer, format='png')
     buffer.seek(0)
-    grafico_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+    image_base64 = base64.b64encode(buffer.read()).decode('utf-8')
     buffer.close()
+    plt.close()
 
-    # Contexto para la plantilla
-    contexto = {
-        "filtros": {
-            "run": run,
-            "estado": estado,
-            "fecha_inicio": fecha_inicio,
-            "fecha_fin": fecha_fin,
-        },
-        "estados_distribucion": estados_distribucion,
-        "grafico_base64": grafico_base64,
+    return image_base64
+
+
+def generar_grafico(estadisticas_estado):
+    """
+    Genera un gráfico de barras armonioso y elegante basado en las estadísticas de estado.
+    Convierte el gráfico en formato base64 para incrustarlo en una página HTML.
+    """
+    # Extraer datos de las estadísticas
+    estados = [item['estado'] for item in estadisticas_estado]
+    totales = [item['total'] for item in estadisticas_estado]
+
+    # Crear la figura y el eje
+    fig, ax = plt.subplots(figsize=(8, 5))  # Ajustar tamaño del gráfico
+
+    # Colores armoniosos y grosor de las barras
+    color_map = {
+        'En Proceso': '#ffc107',  # Amarillo
+        'No Terminado': '#dc3545',  # Rojo
+        'Terminado': '#28a745'  # Verde
     }
-    return render(request, "core/estadisticas.html", contexto)
+    colors = [color_map[estado] for estado in estados]
 
-# Configurar Matplotlib para usar un backend no interactivo
-matplotlib.use('Agg')
+    ax.bar(estados, totales, color=colors, width=0.4, edgecolor='black')  # Bordes negros
+
+    # Configuración del diseño
+    ax.set_title('Distribución de Pacientes por Estado', fontsize=16, weight='bold')
+    ax.set_xlabel('Estado', fontsize=12)
+    ax.set_ylabel('Cantidad de Pacientes', fontsize=12)
+    ax.grid(axis='y', linestyle='--', alpha=0.7)  # Líneas de guía horizontales sutiles
+    ax.tick_params(axis='x', labelsize=10)  # Tamaño de texto en el eje x
+    ax.tick_params(axis='y', labelsize=10)  # Tamaño de texto en el eje y
+
+    # Ajustar diseño para evitar cortes
+    plt.tight_layout()
+
+    # Convertir el gráfico a base64 para incrustar en HTML
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    grafico_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    buffer.close()
+    plt.close()
+
+    return grafico_base64
+
+def buscar_paciente(request):
+    query = request.GET.get('query', '')
+    pacientes = Paciente.objects.filter(Q(rut__icontains=query) | Q(nombre__icontains=query))
+
+    # Retornar los datos en formato JSON
+    results = [
+        {"rut": paciente.rut, "nombre": f"{paciente.nombre} {paciente.apellido}"}
+        for paciente in pacientes
+    ]
+    return JsonResponse(results, safe=False)
 
 
-from io import BytesIO
-from django.http import HttpResponse
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-from reportlab.lib.utils import ImageReader
-import matplotlib.pyplot as plt
-from PIL import Image
-import matplotlib
+def generar_reporte_pdf(request):
+    # Obtener filtros desde el request
+    run = request.GET.get('run', '')
+    nombre = request.GET.get('nombre', '')
+    estado = request.GET.get('estado', '')
+    fecha_inicio = request.GET.get('fecha_inicio', '')
+    fecha_fin = request.GET.get('fecha_fin', '')
 
-# Configurar Matplotlib para usar un backend no interactivo
-matplotlib.use('Agg')
+    # Filtrar pacientes
+    pacientes = Paciente.objects.all()
+    if run:
+        pacientes = pacientes.filter(rut__icontains=run)
+    if nombre:
+        pacientes = pacientes.filter(nombre__icontains=nombre)
+    if estado and estado != 'Todas':
+        pacientes = pacientes.filter(estado=estado)
+    if fecha_inicio and fecha_fin:
+        pacientes = pacientes.filter(sesiones__fecha__range=[fecha_inicio, fecha_fin]).distinct()
+
+    # Calcular estadísticas generales
+    estadisticas_estado = pacientes.values('estado').annotate(total=Count('id'))
+    sesiones = Sesion.objects.filter(paciente__in=pacientes)
+    asistencia_data = {
+        "asistieron": sesiones.filter(asistencia=True).count(),
+        "no_asistieron": sesiones.filter(asistencia=False).count(),
+    }
+
+    # Crear PDF usando plantilla
+    template = get_template('core/reporte_pdf.html')
+    context = {
+        "estadisticas_estado": estadisticas_estado,
+        "asistencia_data": asistencia_data,
+        "total_pacientes": pacientes.count(),
+        "run": run,
+        "nombre": nombre,
+        "estado": estado,
+        "fecha_inicio": fecha_inicio,
+        "fecha_fin": fecha_fin,
+    }
+    html = template.render(context)
+
+    # Generar el PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="reporte_estadisticas.pdf"'
+    pisa_status = pisa.CreatePDF(html, dest=response)
+    if pisa_status.err:
+        return HttpResponse('Hubo un error al generar el PDF', status=500)
+    return response
 
 def descargar_informe(request):
-    # Crear un buffer para el PDF
-    pdf_buffer = BytesIO()
-    pdf = canvas.Canvas(pdf_buffer, pagesize=letter)
+    pacientes = Paciente.objects.all()
+    sesiones = Sesion.objects.all()
 
-    # Agregar título
-    pdf.setTitle("Informe de Estadísticas")
-    pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawCentredString(300, 770, "Informe de Estadísticas de Pacientes")
+    # Preparar datos para el informe
+    context = {
+        'pacientes': pacientes,
+        'sesiones': sesiones,
+    }
 
-    # Texto introductorio
-    pdf.setFont("Helvetica", 12)
-    pdf.drawString(50, 730, "Este informe incluye estadísticas de pacientes.")
+    # Renderizar la plantilla del PDF
+    template = render_to_string('core/informe.html', context)
 
-    # Crear gráfico con Matplotlib
-    plt.figure(figsize=(6, 4))
-    labels = ["En Proceso", "No Terminado", "Terminado"]
-    values = [7, 5, 5]
-    colors = ["#FFC107", "#FF5722", "#4CAF50"]
-    plt.bar(labels, values, color=colors)
-    plt.title("Distribución de Pacientes")
-    plt.xlabel("Estado")
-    plt.ylabel("Cantidad")
-    plt.tight_layout()
+    # Crear el PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="informe_pacientes.pdf"'
 
-    # Guardar el gráfico en un buffer como PNG
-    image_buffer = BytesIO()
-    plt.savefig(image_buffer, format="PNG")
-    plt.close()  # Cerrar la figura de Matplotlib
-    image_buffer.seek(0)  # Mover el puntero al inicio del buffer
+    pisa_status = pisa.CreatePDF(
+        template, dest=response
+    )
 
-    # Convertir el buffer a una imagen que ReportLab pueda procesar
-    pil_image = Image.open(image_buffer)  # Abrir la imagen en Pillow
-    pil_image_rgb = pil_image.convert("RGB")  # Convertir a RGB para compatibilidad
-    image_reader = ImageReader(pil_image_rgb)  # Crear un objeto ImageReader para ReportLab
+    if pisa_status.err:
+        return HttpResponse('Error al generar el PDF', status=500)
 
-    # Insertar la imagen en el PDF
-    pdf.drawImage(image_reader, 100, 500, width=400, height=200)
-
-    # Finalizar y guardar el PDF
-    pdf.showPage()
-    pdf.save()
-
-    # Preparar respuesta HTTP con el PDF
-    pdf_buffer.seek(0)
-    response = HttpResponse(pdf_buffer, content_type="application/pdf")
-    response['Content-Disposition'] = 'attachment; filename="informe_estadisticas.pdf"'
     return response
+

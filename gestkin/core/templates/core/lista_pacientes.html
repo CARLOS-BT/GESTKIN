@@ -1,88 +1,83 @@
-<!-- Extiende la plantilla base -->
 {% extends 'core/base.html' %}
 
 {% block content %}
-<div class="container-fluid my-5 d-flex justify-content-center">
-    <div class="w-100" style="max-width: 90%; font-family: 'Poppins', sans-serif;">  
-        <h1 class="text-center fw-bold mb-4" style="color: #3301a8; font-size: 2.5rem;">Lista de Pacientes</h1>
+<div class="container mt-5">
+    <h1 class="text-center">Lista de Pacientes</h1>
 
-        <!-- Formulario de búsqueda -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <form method="GET" action="{% url 'lista_pacientes' %}" class="d-flex w-100">
-                <input type="text" name="q" value="{{ query }}" 
-                       class="form-control me-2" placeholder="Buscar por nombre, apellido o RUT"
-                       style="max-width: 300px;">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-search"></i> Buscar
-                </button>
-            </form>
-            <a href="{% url 'ingreso_pacientes' %}" class="btn btn-success btn-lg px-4 py-2">
-                <i class="fas fa-arrow-left"></i> Volver al Ingreso de Pacientes
-            </a>
-        </div>
+    <!-- Barra de búsqueda -->
+    <form method="GET" class="mb-4 d-flex justify-content-center">
+        <input type="text" name="q" value="{{ query }}" class="form-control w-50" placeholder="Buscar por nombre, apellido o RUT">
+        <button type="submit" class="btn btn-primary ms-2">Buscar</button>
+    </form>
 
-        <!-- Tabla -->
-        <div class="table-responsive mt-4">
-            <table class="table table-bordered table-striped table-hover align-middle">
-                <thead class="table-primary text-center">
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Apellido</th>
-                        <th>RUT</th>
-                        <th>Sesiones</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                        <th>Detalles</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for paciente in pacientes %}
-                    <tr>
-                        <td>{{ paciente.nombre }}</td>
-                        <td>{{ paciente.apellido }}</td>
-                        <td>{{ paciente.rut }}</td>
-                        <td class="text-center">{{ paciente.cantidad_sesiones }}</td>
-                        <td class="text-center">
-                            <form method="post" action="{% url 'actualizar_estado_paciente' paciente.id %}">
-                                {% csrf_token %}
-                                <select name="estado" 
-                                        class="form-select form-select-sm {% if paciente.estado == 'En Proceso' %}bg-warning{% elif paciente.estado == 'Terminado' %}bg-success text-white{% elif paciente.estado == 'No Terminado' %}bg-danger text-white{% endif %}" 
-                                        style="color: black; background-color: white; border: 1px solid #ccc;"
-                                        onchange="this.form.submit()">
-                                    <option value="En Proceso" {% if paciente.estado == 'En Proceso' %}selected{% endif %}>
-                                        En Proceso
-                                    </option>
-                                    <option value="Terminado" {% if paciente.estado == 'Terminado' %}selected{% endif %}>
-                                        Terminado
-                                    </option>
-                                    <option value="No Terminado" {% if paciente.estado == 'No Terminado' %}selected{% endif %}>
-                                        No Terminado
-                                    </option>
-                                </select>
-                            </form>
-                        </td>
-                        <td class="text-center" style="width: 50px;">
-                            <a href="{% url 'eliminar_paciente' paciente.id %}" 
-                               class="btn btn-danger btn-sm"
-                               style="padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%;"
-                               onclick="return confirm('¿Estás seguro de que deseas eliminar este paciente?');">
-                                <i class="fas fa-trash-alt"></i>
-                            </a>
-                        </td>
-                        <td class="text-center">
-                            <a href="{% url 'detalle_paciente' paciente.id %}" class="btn btn-xs btn-info px-3 py-2">
-                                <i class="fas fa-info-circle"></i> Detalles
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" class="text-center text-muted py-3">No hay pacientes registrados.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <!-- Tabla de pacientes -->
+    <table class="table table-striped table-bordered">
+        <thead class="table-primary text-center">
+            <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>RUT</th>
+                <th>Sesiones</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+                
+            </tr>
+        </thead>
+        <tbody>
+            {% for paciente in page_obj.object_list %}
+            <tr>
+                <td>{{ paciente.nombre }}</td>
+                <td>{{ paciente.apellido }}</td>
+                <td>{{ paciente.rut }}</td>
+                <td>{{ paciente.cantidad_sesiones }}</td>
+                <td class="text-center">
+                    <form method="post" action="{% url 'actualizar_estado_paciente' paciente.id %}">
+                        {% csrf_token %}
+                        <select name="estado" 
+                                class="form-select form-select-sm {% if paciente.estado == 'En Proceso' %}bg-warning{% elif paciente.estado == 'Terminado' %}bg-success text-white{% elif paciente.estado == 'No Terminado' %}bg-danger text-white{% endif %}" 
+                                style="color: black; background-color: white; border: 1px solid #ccc;"
+                                onchange="this.form.submit()">
+                            <option value="En Proceso" {% if paciente.estado == 'En Proceso' %}selected{% endif %}>
+                                En Proceso
+                            </option>
+                            <option value="Terminado" {% if paciente.estado == 'Terminado' %}selected{% endif %}>
+                                Terminado
+                            </option>
+                            <option value="No Terminado" {% if paciente.estado == 'No Terminado' %}selected{% endif %}>
+                                No Terminado
+                            </option>
+                        </select>
+                    </form>
+                </td>
+                <td class="text-center">
+                    <a href="{% url 'detalle_paciente' paciente.id %}" class="btn btn-info">Detalles</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Paginación -->
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">Anterior</a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+            </li>
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Siguiente</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
 </div>
 {% endblock %}
