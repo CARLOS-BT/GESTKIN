@@ -25,8 +25,18 @@ from django.views.decorators.http import require_POST
 import matplotlib
 matplotlib.use('Agg')  # Configurar backend no interactivo
 import matplotlib.pyplot as plt
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Paciente
+import re
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from gestkin.core.utils import group_required  # Ajusta la ruta según tu estructura
+from django.contrib.auth.forms import AuthenticationForm
 
 
+@login_required  # Requiere que el usuario esté autenticado
+@group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def ingreso_pacientes(request):
     form = PacienteForm(request.POST or None)
     sesiones = []
@@ -74,12 +84,16 @@ def ingreso_pacientes(request):
         'sesiones': sesiones,
     })
 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+@login_required  # Requiere que el usuario esté autenticado
+@group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def lista_pacientes(request):
-    query = request.GET.get('q', '')  # Obtener el término de búsqueda
-    pacientes = Paciente.objects.all().order_by('-created')
+    query = request.GET.get('q', '')  # Término de búsqueda
+    sort_by = request.GET.get('sort_by', '-created')  # Orden por defecto: '-created'
+    pacientes = Paciente.objects.all().order_by(sort_by)
 
-    # Filtrar por búsqueda si hay un término
+    # Filtrar por el término de búsqueda
     if query:
         pacientes = pacientes.filter(
             Q(nombre__icontains=query) |
@@ -87,23 +101,55 @@ def lista_pacientes(request):
             Q(rut__icontains=query)
         )
 
-    # Paginación: dividir pacientes en páginas de 10 elementos
+    # Paginación
     paginator = Paginator(pacientes, 10)  # 10 pacientes por página
-    page_number = request.GET.get('page')  # Obtener el número de página actual
-    page_obj = paginator.get_page(page_number)  # Obtener la página actual
+    page_number = request.GET.get('page')  # Número de página actual
+    try:
+        page_obj = paginator.get_page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.get_page(1)  # Si no es un número, muestra la primera página
+    except EmptyPage:
+        page_obj = paginator.get_page(paginator.num_pages)  # Si está fuera de rango, muestra la última
 
-    return render(request, 'core/lista_pacientes.html', {
+    context = {
         'query': query,
-        'page_obj': page_obj,  # Pasar la página actual al template
-    })
+        'page_obj': page_obj,
+        'sort_by': sort_by,
+        'no_results': not pacientes.exists()  # Para mostrar mensaje si no hay resultados
+    }
+    return render(request, 'core/lista_pacientes.html', context)
   
 
-def login_view(request):
-    """
-    Vista para la pantalla de inicio de sesión.
-    """
-    return render(request, 'core/login.html')
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
 
+""""
+   Vista para la pantalla de inicio de sesión.
+"""
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+
+            # Valida los nombres reales de los grupos
+            if user.groups.filter(name='grupo_jefe').exists():
+                return redirect('estadisticas')
+            elif user.groups.filter(name='grupo_kine').exists() or user.groups.filter(name='grupo_asistente').exists():
+                return redirect('ingreso_pacientes')
+            else:
+                messages.error(request, "No tienes permiso para acceder a esta aplicación.")
+                return redirect('login')
+        else:
+            messages.error(request, "Usuario o contraseña incorrectos. Inténtalo de nuevo.")
+    else:
+        form = AuthenticationForm()
+
+    return render(request, 'core/login.html', {'form': form})
+
+@login_required  # Requiere que el usuario esté autenticado
+@group_required('kinesiologo', 'asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def editar_paciente(request, id):
     # Obtener el paciente desde la base de datos
     paciente = get_object_or_404(Paciente, id=id)
@@ -152,12 +198,6 @@ def editar_paciente(request, id):
         "sesiones": Sesion.objects.filter(paciente=paciente),
     })
 
-def historial_pacientes(request):
-    """
-    Vista para mostrar el historial de pacientes.
-    """
-    return render(request, 'core/historial_pacientes.html')
-
 
 def admin_usuarios(request):
     """
@@ -166,18 +206,18 @@ def admin_usuarios(request):
     return render(request, 'core/admin_usuarios.html')
 
 
+@login_required  # Requiere que el usuario esté autenticado
+@group_required('kinesiologo', 'asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def eliminar_paciente(request, paciente_id):
-    # Obtener el paciente por ID o devolver un error 404 si no existe
-    paciente = get_object_or_404(Paciente, id=paciente_id)
-
-    # Eliminar el paciente
-    paciente.delete()
-
-    # Redirigir a la lista de pacientes con un mensaje opcional
-    return redirect('lista_pacientes')
+    if request.method == 'POST':
+        paciente = get_object_or_404(Paciente, id=paciente_id)
+        paciente.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False, 'error': 'Método no permitido.'})
 
 
-@csrf_exempt
+@login_required  # Requiere que el usuario esté autenticado
+@group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def detalle_paciente(request, id):
     paciente = get_object_or_404(Paciente, id=id)
     sesiones = Sesion.objects.filter(paciente=paciente).order_by("fecha", "hora")
@@ -248,7 +288,8 @@ def detalle_paciente(request, id):
         "archivos": archivos,
         "form": form,
     })
-
+@login_required  # Requiere que el usuario esté autenticado
+@group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def eliminar_archivo(request, archivo_id):
     archivo = get_object_or_404(ArchivoPaciente, id=archivo_id)
     paciente_id = archivo.paciente.id  # Guardar el ID del paciente antes de borrar
@@ -258,7 +299,8 @@ def eliminar_archivo(request, archivo_id):
     return redirect('detalle_paciente', id=paciente_id)
 
 
-@require_POST
+@login_required  # Requiere que el usuario esté autenticado
+@group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def actualizar_estado_paciente(request, paciente_id):
     paciente = get_object_or_404(Paciente, id=paciente_id)
     nuevo_estado = request.POST.get("estado")
@@ -268,6 +310,8 @@ def actualizar_estado_paciente(request, paciente_id):
         paciente.save()
     return redirect("lista_pacientes")
 
+@login_required  # Requiere que el usuario esté autenticado
+@group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def eliminar_sesion(request, sesion_id):
     sesion = get_object_or_404(Sesion, id=sesion_id)
     paciente_id = sesion.paciente.id  # Guardar el ID del paciente antes de borrar
@@ -280,6 +324,8 @@ def eliminar_sesion(request, sesion_id):
     messages.success(request, "Sesión eliminada correctamente.")
     return redirect("detalle_paciente", id=paciente_id)
 
+@login_required  # Requiere que el usuario esté autenticado
+@group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def actualizar_asistencia(request, sesion_id):
     if request.method == "POST":
         sesion = get_object_or_404(Sesion, id=sesion_id)
@@ -289,6 +335,8 @@ def actualizar_asistencia(request, sesion_id):
         messages.success(request, "La asistencia se actualizó correctamente.")
     return redirect("detalle_paciente", id=sesion.paciente.id)
 
+@login_required  # Requiere que el usuario esté autenticado
+@group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def guardar_asistencias(request, paciente_id):
     if request.method == "POST":
         paciente = get_object_or_404(Paciente, id=paciente_id)
@@ -300,13 +348,13 @@ def guardar_asistencias(request, paciente_id):
         messages.success(request, "Las asistencias se actualizaron correctamente.")
     return redirect("detalle_paciente", id=paciente_id)
 
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages  # Para las alertas
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages  # Para mostrar mensajes de error o éxito
 from .models import Sesion
 
+@login_required  # Requiere que el usuario esté autenticado
+@group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def editar_sesion(request, sesion_id):
     sesion = get_object_or_404(Sesion, id=sesion_id)
 
@@ -393,7 +441,8 @@ def obtener_estadisticas():
         "top_pacientes": top_pacientes,
     }
 
-
+@login_required  # Requiere que el usuario esté autenticado
+@group_required('grupo_kine', 'grupo_asistente', 'grupo_jefe')  # Solo Kinesiologo,Asistente y jefe pueden acceder
 def estadisticas(request):
     run = request.GET.get('run', '')
     nombre = request.GET.get('nombre', '')
@@ -439,8 +488,6 @@ def estadisticas(request):
         "fecha_inicio": fecha_inicio,
         "fecha_fin": fecha_fin,
     })
-
-
 
 def generate_chart(estadisticas_estado):
     """
@@ -598,3 +645,89 @@ def descargar_informe(request):
 
     return response
 
+
+# Función para validar el RUT
+def agregar_paciente(request):
+    sesiones = []  # Sesiones dinámicas a mostrar en el formulario
+    errores = {}   # Errores específicos de los campos
+
+    if request.method == "POST":
+        if "actualizar_sesiones" in request.POST:
+            # Lógica para actualizar sesiones dinámicas
+            cantidad_sesiones = int(request.POST.get("cantidad_sesiones", 0))
+            for i in range(cantidad_sesiones):
+                sesiones.append({
+                    "index": i + 1,
+                    "fecha": "",
+                    "hora": "",
+                })
+            
+            # Devolver todos los campos previamente ingresados
+            return render(request, "core/ingreso_pacientes.html", {
+                "sesiones": sesiones,
+                "cantidad_sesiones": cantidad_sesiones,
+                "nombre": request.POST.get("nombre"),
+                "apellido": request.POST.get("apellido"),
+                "rut": request.POST.get("rut"),
+                "patologia": request.POST.get("patologia"),
+                "observaciones": request.POST.get("observaciones"),
+            })
+
+        # Datos del formulario
+        nombre = request.POST.get("nombre")
+        apellido = request.POST.get("apellido")
+        rut = request.POST.get("rut")
+        cantidad_sesiones = request.POST.get("cantidad_sesiones")
+        patologia = request.POST.get("patologia")
+        observaciones = request.POST.get("observaciones")
+
+        # Validación de nombre
+        if not re.match(r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$", nombre):
+            errores["nombre"] = "El nombre solo puede contener letras."
+
+        # Validación de apellido
+        if not re.match(r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$", apellido):
+            errores["apellido"] = "El apellido solo puede contener letras."
+
+        # Validación del RUT
+        if not validar_rut(rut):
+            errores["rut"] = "El RUN ingresado no es válido. Ejemplo: 12345678-K."
+
+        # Si hay errores, renderizar la página con mensajes de error
+        if errores:
+            return render(request, "core/ingreso_pacientes.html", {
+                "sesiones": sesiones,
+                "cantidad_sesiones": cantidad_sesiones,
+                "errores": errores,
+                "nombre": nombre,
+                "apellido": apellido,
+                "rut": rut,
+                "patologia": patologia,
+                "observaciones": observaciones,
+            })
+
+        # Crear el paciente
+        paciente = Paciente.objects.create(
+            nombre=nombre,
+            apellido=apellido,
+            rut=rut,
+            cantidad_sesiones=cantidad_sesiones,
+            patologia=patologia,
+            observaciones=observaciones,
+        )
+
+        # Crear las sesiones si hay datos dinámicos
+        for i in range(int(cantidad_sesiones)):
+            fecha = request.POST.get(f"fecha_{i + 1}")
+            hora = request.POST.get(f"hora_{i + 1}")
+            if fecha and hora:
+                Sesion.objects.create(
+                    paciente=paciente,
+                    fecha=fecha,
+                    hora=hora
+                )
+
+        messages.success(request, "Paciente agregado correctamente.")
+        return redirect("detalle_paciente", id=paciente.id)
+
+    return render(request, "core/ingreso_pacientes.html")

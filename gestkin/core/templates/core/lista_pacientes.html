@@ -1,8 +1,7 @@
 {% extends 'core/base.html' %}
-
 {% block content %}
 <div class="container mt-5">
-    <h1 class="text-center">Lista de Pacientes</h1>
+    <h1 class="text-center mb-4">Lista de Pacientes</h1>
 
     <!-- Barra de búsqueda -->
     <form method="GET" class="mb-4 d-flex justify-content-center">
@@ -10,17 +9,19 @@
         <button type="submit" class="btn btn-primary ms-2">Buscar</button>
     </form>
 
+    {% if no_results %}
+    <p class="text-center text-muted">No se encontraron pacientes.</p>
+    {% else %}
     <!-- Tabla de pacientes -->
     <table class="table table-striped table-bordered">
         <thead class="table-primary text-center">
             <tr>
-                <th>Nombre</th>
-                <th>Apellido</th>
-                <th>RUT</th>
-                <th>Sesiones</th>
+                <th><a href="?sort_by=nombre{% if query %}&q={{ query }}{% endif %}">Nombre</a></th>
+                <th><a href="?sort_by=apellido{% if query %}&q={{ query }}{% endif %}">Apellido</a></th>
+                <th><a href="?sort_by=rut{% if query %}&q={{ query }}{% endif %}">RUT</a></th>
+                <th><a href="?sort_by=cantidad_sesiones{% if query %}&q={{ query }}{% endif %}">Sesiones</a></th>
                 <th>Estado</th>
                 <th>Acciones</th>
-                
             </tr>
         </thead>
         <tbody>
@@ -31,10 +32,10 @@
                 <td>{{ paciente.rut }}</td>
                 <td>{{ paciente.cantidad_sesiones }}</td>
                 <td class="text-center">
-                    <form method="post" action="{% url 'actualizar_estado_paciente' paciente.id %}">
+                    <form method="POST" action="{% url 'actualizar_estado_paciente' paciente.id %}">
                         {% csrf_token %}
-                        <select name="estado" 
-                                class="form-select form-select-sm {% if paciente.estado == 'En Proceso' %}bg-warning{% elif paciente.estado == 'Terminado' %}bg-success text-white{% elif paciente.estado == 'No Terminado' %}bg-danger text-white{% endif %}" 
+                        <select name="estado"
+                                class="form-select form-select-sm {% if paciente.estado == 'En Proceso' %}bg-warning{% elif paciente.estado == 'Terminado' %}bg-success text-white{% elif paciente.estado == 'No Terminado' %}bg-danger text-white{% endif %}"
                                 style="color: black; background-color: white; border: 1px solid #ccc;"
                                 onchange="this.form.submit()">
                             <option value="En Proceso" {% if paciente.estado == 'En Proceso' %}selected{% endif %}>
@@ -50,7 +51,17 @@
                     </form>
                 </td>
                 <td class="text-center">
-                    <a href="{% url 'detalle_paciente' paciente.id %}" class="btn btn-info">Detalles</a>
+                    <div class="d-flex justify-content-center gap-2">
+                        <!-- Detalles -->
+                        <a href="{% url 'detalle_paciente' paciente.id %}" class="btn btn-info btn-sm">Detalles</a>
+                        <!-- Eliminar -->
+                        <form method="POST" action="{% url 'eliminar_paciente' paciente.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de eliminar este paciente?');">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </div>
                 </td>
             </tr>
             {% endfor %}
@@ -79,5 +90,6 @@
             {% endif %}
         </ul>
     </nav>
+    {% endif %}
 </div>
 {% endblock %}

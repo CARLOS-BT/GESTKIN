@@ -1,53 +1,16 @@
-"""
-URL configuration for gestkin project.
-
-The `urlpatterns` list routes URLs to views. For more informataciente_id>/',ion please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
+# gestkin/urls.py
 from django.contrib import admin
 from django.urls import path, include
-from gestkin.core import views
-from django.contrib.auth.views import LogoutView
-from django.conf.urls.static import static
 from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
-    path('', views.login_view, name='login'),  # Página de inicio de sesión
-    path('lista-pacientes/', views.lista_pacientes, name='lista_pacientes'),  # Lista para confirmar los datos
-    path('historial/', views.historial_pacientes, name='historial_pacientes'),  # Historial de pacientes
-    path('ingreso-pacientes/', views.ingreso_pacientes, name='ingreso_pacientes'),  # Ingreso de pacientes
-    path('usuarios/', views.admin_usuarios, name='admin_usuarios'),  # Gestión de usuarios
-    path('admin/', admin.site.urls),  # Admin panel
-    path('inicio/', views.login_view, name='inicio'),  # Agregar la ruta /inicio
-    path('logout/', LogoutView.as_view(), name='logout'),  # Ruta para cerrar sesión
-    path('editar-paciente/<int:id>/', views.editar_paciente, name='editar_paciente'),
-    #path('eliminar-paciente/<int:p views.eliminar_paciente, name='eliminar_paciente'),
-    path('eliminar-paciente/<int:paciente_id>/', views.eliminar_paciente, name='eliminar_paciente'),
-    path('detalle-paciente/<int:id>/', views.detalle_paciente, name='detalle_paciente'),
-    path("actualizar-estado-paciente/<int:paciente_id>/", views.actualizar_estado_paciente, name="actualizar_estado_paciente"),
-    path('eliminar-archivo/<int:archivo_id>/', views.eliminar_archivo, name='eliminar_archivo'),
-    path("actualizar-asistencia/<int:sesion_id>/", views.actualizar_asistencia, name="actualizar_asistencia"),
-    path('guardar-asistencias/<int:paciente_id>/', views.guardar_asistencias, name='guardar_asistencias'),
-    path("eliminar-sesion/<int:sesion_id>/", views.eliminar_sesion, name="eliminar_sesion"),
-    path("estadisticas/", views.estadisticas, name="estadisticas"),
-    path("descargar-informe/", views.descargar_informe, name="descargar_informe"),
-    #path('estadisticas/descargar/', views.descargar_informe, name='descargar_informe'),
-    path('estadisticas/reporte_pdf/', views.generar_reporte_pdf, name='generar_reporte_pdf'),
-    path('buscar-paciente/', views.buscar_paciente, name='buscar_paciente'),
-    path('editar-sesion/<int:sesion_id>/', views.editar_sesion, name='editar_sesion'),
-    ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path('admin/', admin.site.urls),  # Panel de administración
+    path('', include('gestkin.core.urls')),  # Delegar manejo de rutas a la app 'core'
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-# Agregar manejo de archivos de medios en modo DEBUG
+# Manejo de archivos de medios en modo DEBUG
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
 
