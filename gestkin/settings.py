@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
+    
 ]
 
 MIDDLEWARE = [
@@ -88,7 +89,12 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Opcional: Si tienes un directorio global de archivos estáticos
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
 STATIC_ROOT = BASE_DIR / 'staticfiles'  # Carpeta para archivos recolectados
 
 

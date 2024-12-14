@@ -33,58 +33,186 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from gestkin.core.utils import group_required  # Ajusta la ruta según tu estructura
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.http import JsonResponse
+from .models import Paciente
+from django.http import JsonResponse
+from .models import Paciente
+import re
+from django.core.exceptions import ValidationError
+from datetime import datetime, timedelta
+
+import re
+from datetime import datetime, timedelta
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.http import JsonResponse
+from .models import Paciente, Sesion
+from .forms import PacienteForm
+from django.contrib.auth.decorators import login_required
+from gestkin.core.utils import group_required  # Ajusta la ruta según tu estructura
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+import re
+from datetime import datetime, timedelta
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.http import JsonResponse
+from .models import Paciente, Sesion
+from .forms import PacienteForm
+from django.contrib.auth.decorators import login_required
+from gestkin.core.utils import group_required  # Ajusta la ruta según tu estructura
 
 
-@login_required  # Requiere que el usuario esté autenticado
+
+from datetime import datetime, timedelta
+import re
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from .models import Paciente, Sesion
+from .forms import PacienteForm
+from gestkin.core.utils import group_required  # Ajusta la ruta según tu proyecto
+
+
+@login_required
 @group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def ingreso_pacientes(request):
     form = PacienteForm(request.POST or None)
     sesiones = []
+    errores = {}
 
     if request.method == "POST":
-        print("Datos recibidos en el formulario:", request.POST)
+        # Obtener los datos del formulario
+        nombre = request.POST.get("nombre", "").strip()
+        apellido = request.POST.get("apellido", "").strip()
+        rut = request.POST.get("rut", "").strip()
+        observaciones = request.POST.get("observaciones", "").strip()
+        patologia = request.POST.get("patologia", "").strip()
+        cantidad_sesiones = request.POST.get("cantidad_sesiones", "0").strip()
 
-        # Si se presiona "Actualizar Sesiones"
+        # Validaciones de campos
+        if not re.match(r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{1,20}$", nombre):
+            errores["nombre"] = "El nombre solo puede contener letras y espacios (máximo 20 caracteres)."
+        if not re.match(r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{1,20}$", apellido):
+            errores["apellido"] = "El apellido solo puede contener letras y espacios (máximo 20 caracteres)."
+        if not re.match(r"^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]{1,100}$", observaciones):
+            errores["observaciones"] = "Las observaciones solo pueden contener letras, números y espacios (máximo 100 caracteres)."
+        if not re.match(r"^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]{1,100}$", patologia):
+            errores["patologia"] = "La patología solo puede contener letras, números y espacios (máximo 100 caracteres)."
+
+
+        # Manejar botón "Actualizar" para sesiones dinámicas
         if "actualizar_sesiones" in request.POST:
-            cantidad_sesiones = int(request.POST.get("cantidad_sesiones", 0))
-            sesiones = [{"index": i + 1, "fecha": "", "hora": "09:00"} for i in range(cantidad_sesiones)]
+            cantidad_sesiones = int(cantidad_sesiones) if cantidad_sesiones.isdigit() else 0
+            fecha_inicial = datetime.now().date()
+            for i in range(cantidad_sesiones):
+                sesiones.append({
+                    "index": i + 1,
+                    "fecha": fecha_inicial + timedelta(days=i * 7),
+                    "hora": "09:00",
+                })
             return render(request, 'core/ingreso_pacientes.html', {
                 'form': form,
-                'cantidad_sesiones': cantidad_sesiones,
                 'sesiones': sesiones,
+                'errores': errores,
+                'nombre': nombre,
+                'apellido': apellido,
+                'rut': rut,
+                'observaciones': observaciones,
+                'patologia': patologia,
+                'cantidad_sesiones': cantidad_sesiones,
             })
 
-        # Si se guarda el paciente
-        if form.is_valid():
-            paciente = form.save(commit=False)
-            paciente.estado = "En Proceso"
-            paciente.save()
+        # Si hay errores, retornar el formulario con los mensajes
+        if errores:
+            return render(request, 'core/ingreso_pacientes.html', {
+                'form': form,
+                'sesiones': sesiones,
+                'errores': errores,
+                'nombre': nombre,
+                'apellido': apellido,
+                'rut': rut,
+                'observaciones': observaciones,
+                'patologia': patologia,
+                'cantidad_sesiones': cantidad_sesiones,
+            })
 
-            # Crear sesiones automáticamente
-            cantidad_sesiones = int(request.POST.get("cantidad_sesiones", 0))
-            fecha_inicial = datetime.now().date()
-            hora_inicial = "09:00"
+        # Crear el paciente si no hay errores
+        paciente = Paciente.objects.create(
+            nombre=nombre,
+            apellido=apellido,
+            rut=rut,
+            observaciones=observaciones,
+            patologia=patologia,
+        )
 
-            for i in range(cantidad_sesiones):
-                fecha = request.POST.get(f"fecha_{i + 1}", fecha_inicial + timedelta(days=i * 7))
-                hora = request.POST.get(f"hora_{i + 1}", hora_inicial)
-                Sesion.objects.create(
-                    paciente=paciente,
-                    fecha=fecha,
-                    hora=hora,
-                )
-            paciente.cantidad_sesiones = cantidad_sesiones
-            paciente.save()  # Guardar el número actualizado de sesiones
+        # Crear sesiones automáticamente
+        cantidad_sesiones = int(cantidad_sesiones) if cantidad_sesiones.isdigit() else 0
+        fecha_inicial = datetime.now().date()
+        for i in range(cantidad_sesiones):
+            fecha = fecha_inicial + timedelta(days=i * 7)
+            Sesion.objects.create(
+                paciente=paciente,
+                fecha=fecha,
+                hora="09:00",
+            )
 
-            messages.success(request, "Paciente y sesiones agregados correctamente.")
-            return redirect('detalle_paciente', id=paciente.id)
+        # Guardar la cantidad de sesiones en el paciente
+        paciente.cantidad_sesiones = cantidad_sesiones
+        paciente.save()
+
+        messages.success(request, "Paciente y sesiones agregados correctamente.")
+        return redirect('detalle_paciente', id=paciente.id)
 
     return render(request, 'core/ingreso_pacientes.html', {
         'form': form,
         'sesiones': sesiones,
     })
 
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+def validar_rut(value):
+    """Valida si el RUT es válido."""
+    value = value.strip().upper()  # Eliminar espacios y convertir a mayúsculas
+    
+    # Validar formato general del RUT
+    if not re.match(r"^\d{7,8}-[0-9K]$", value):  # Formato: 7-8 dígitos y un dígito verificador
+        return False
+
+    # Separar el RUT y el dígito verificador
+    rut, dv = value.split("-")
+    
+    try:
+        rut = int(rut)  # Convertir la parte numérica del RUT a entero
+    except ValueError:
+        return False  # Si no es un número, el RUT no es válido
+
+    # Comparar el dígito verificador calculado con el ingresado
+    return dv == calcular_digito_verificador(rut)
+
+
+def calcular_digito_verificador(rut_sin_dv):
+    """Calcula el dígito verificador para un RUT dado."""
+    suma = 0
+    multiplicador = 2
+
+    # Iterar sobre los dígitos desde el último al primero
+    for digito in reversed(str(rut_sin_dv)):
+        suma += int(digito) * multiplicador
+        multiplicador = 9 if multiplicador == 7 else multiplicador + 1
+
+    resto = suma % 11
+    dv = 11 - resto
+
+    # Retornar el dígito verificador correspondiente
+    if dv == 11:
+        return "0"
+    elif dv == 10:
+        return "K"
+    else:
+        return str(dv)
+
+
 
 @login_required  # Requiere que el usuario esté autenticado
 @group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
@@ -119,9 +247,12 @@ def lista_pacientes(request):
     }
     return render(request, 'core/lista_pacientes.html', context)
   
+from django.shortcuts import redirect
 
-from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
+def redirect_to_login(request):
+    """Redirige a la página de inicio de sesión."""
+    return redirect('login')  # Asegúrate de que 'login' sea el name en tu URLconf
+
 
 """"
    Vista para la pantalla de inicio de sesión.
@@ -148,8 +279,9 @@ def login_view(request):
 
     return render(request, 'core/login.html', {'form': form})
 
+
 @login_required  # Requiere que el usuario esté autenticado
-@group_required('kinesiologo', 'asistente')  # Solo Kinesiologo y Asistente pueden acceder
+@group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def editar_paciente(request, id):
     # Obtener el paciente desde la base de datos
     paciente = get_object_or_404(Paciente, id=id)
@@ -206,15 +338,18 @@ def admin_usuarios(request):
     return render(request, 'core/admin_usuarios.html')
 
 
+from django.shortcuts import redirect
+
 @login_required  # Requiere que el usuario esté autenticado
-@group_required('kinesiologo', 'asistente')  # Solo Kinesiologo y Asistente pueden acceder
+@group_required('grupo_kine')  # Solo Kinesiologo puede acceder
 def eliminar_paciente(request, paciente_id):
-    if request.method == 'POST':
+    if request.method == 'POST':  # Solo aceptar eliminación mediante POST
         paciente = get_object_or_404(Paciente, id=paciente_id)
         paciente.delete()
-        return JsonResponse({'success': True})
-    return JsonResponse({'success': False, 'error': 'Método no permitido.'})
-
+        messages.success(request, "El paciente fue eliminado exitosamente.")  # Mensaje de confirmación
+    else:
+        messages.error(request, "Método no permitido para eliminar pacientes.")  # Mensaje de error si no es POST
+    return redirect('lista_pacientes')  # Redirige a la lista de pacientes
 
 @login_required  # Requiere que el usuario esté autenticado
 @group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
@@ -230,7 +365,11 @@ def detalle_paciente(request, id):
             fecha = request.POST.get("fecha")
             hora = request.POST.get("hora")
             asistencia = request.POST.get("asistencia") == "Sí"
-            comentario_asistencia = request.POST.get("comentario_asistencia", "").strip()  # Nuevo campo para comentarios
+            comentario_asistencia = request.POST.get("comentario_asistencia", "").strip()  # Tomar el comentario y limpiar espacios
+
+            # Si el comentario está vacío, establecer el valor predeterminado "Sin comentarios"
+            if not comentario_asistencia:
+                comentario_asistencia = "Sin comentarios"
 
             sesion = get_object_or_404(Sesion, id=sesion_id)
 
@@ -239,7 +378,7 @@ def detalle_paciente(request, id):
                 sesion.fecha = fecha
                 sesion.hora = hora
                 sesion.asistencia = asistencia
-                sesion.comentario_asistencia = comentario_asistencia  # Guardar el comentario de asistencia
+                sesion.comentario_asistencia = comentario_asistencia  # Guardar el comentario
                 try:
                     sesion.full_clean()  # Validar el modelo antes de guardar
                     sesion.save()
@@ -263,6 +402,7 @@ def detalle_paciente(request, id):
                         fecha=nueva_fecha,
                         hora="09:00",
                         asistencia=False,
+                        comentario_asistencia="Sin comentarios"  # Establecer "Sin comentarios" por defecto
                     )
 
                 # Actualizar la cantidad de sesiones del paciente
@@ -288,6 +428,7 @@ def detalle_paciente(request, id):
         "archivos": archivos,
         "form": form,
     })
+
 @login_required  # Requiere que el usuario esté autenticado
 @group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def eliminar_archivo(request, archivo_id):
@@ -354,72 +495,7 @@ from django.contrib import messages  # Para mostrar mensajes de error o éxito
 from .models import Sesion
 
 @login_required  # Requiere que el usuario esté autenticado
-@group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
-def editar_sesion(request, sesion_id):
-    sesion = get_object_or_404(Sesion, id=sesion_id)
-
-    if request.method == 'POST':
-        # Obtener datos del formulario
-        fecha = request.POST.get('fecha')
-        hora = request.POST.get('hora')
-        comentario = request.POST.get('comentario')
-        asistencia = request.POST.get('asistencia')
-
-        # Validaciones
-        errores = {}
-        if not fecha:
-            errores['fecha'] = "La fecha es obligatoria."
-        if not hora:
-            errores['hora'] = "La hora es obligatoria."
-        if not comentario:
-            errores['comentario'] = "El comentario es obligatorio."
-        if asistencia not in ['0', '1']:
-            errores['asistencia'] = "Selecciona una opción válida para asistencia."
-
-        # Si hay errores, renderizar la página con el modal abierto
-        if errores:
-            return render(request, 'core/detalle_paciente.html', {
-                'paciente': sesion.paciente,
-                'sesiones': Sesion.objects.filter(paciente=sesion.paciente),
-                'errores': errores,
-                'sesion_id': sesion.id  # Para mantener el modal abierto en el frontend
-            })
-
-        # Guardar los datos si todo es válido
-        sesion.fecha = fecha
-        sesion.hora = hora
-        sesion.comentario_asistencia = comentario
-        sesion.asistencia = asistencia == '1'  # Convierte "1" a True y "0" a False
-        sesion.save()
-
-        messages.success(request, "Sesión actualizada exitosamente.")
-        return redirect('detalle_paciente', paciente_id=sesion.paciente.id)
-
-    return render(request, 'core/detalle_paciente.html', {'paciente': sesion.paciente})
-
-      # return redirect('detalle_paciente', id=sesion.paciente.id)  # Ajusta esta redirección según tu proyecto 
-
-def calcular_digito_verificador(rut_sin_dv):
-    suma = 0
-    multiplicador = 2
-    for digito in reversed(str(rut_sin_dv)):
-        suma += int(digito) * multiplicador
-        multiplicador = 9 if multiplicador == 7 else multiplicador + 1
-    resto = suma % 11
-    dv = 11 - resto
-    return "0" if dv == 11 else "k" if dv == 10 else str(dv)
-
-def validar_rut(value):
-    # Validar formato general
-    if not re.match(r"^\d{7,8}-[0-9kK]$", value):
-        raise ValidationError("El RUT ingresado no tiene un formato válido. Ejemplo: 12345678-9")
-
-    # Separar el RUT en número y dígito verificador
-    rut, dv = value.split("-")
-    if dv.lower() != calcular_digito_verificador(rut):
-        raise ValidationError("El dígito verificador del RUT ingresado no es válido.")
-    
-
+@group_required('grupo_kine', 'grupo_asistente', 'grupo_jefe')  # todos pueden obtrener estadisticas
 def obtener_estadisticas():
     total_pacientes = Paciente.objects.count()
     estados_distribucion = Paciente.objects.values("estado").annotate(total=Count("estado"))
@@ -441,44 +517,55 @@ def obtener_estadisticas():
         "top_pacientes": top_pacientes,
     }
 
-@login_required  # Requiere que el usuario esté autenticado
-@group_required('grupo_kine', 'grupo_asistente', 'grupo_jefe')  # Solo Kinesiologo,Asistente y jefe pueden acceder
+from django.core.paginator import Paginator
+
+@login_required
+@group_required('grupo_kine', 'grupo_asistente', 'grupo_jefe')
 def estadisticas(request):
+    # Obtener parámetros de filtro
     run = request.GET.get('run', '')
     nombre = request.GET.get('nombre', '')
-    estado = request.GET.get('estado', '')
+    estado = request.GET.get('estado', 'Todas')
     fecha_inicio = request.GET.get('fecha_inicio', '')
     fecha_fin = request.GET.get('fecha_fin', '')
 
-    # Filtrar pacientes según los criterios de búsqueda
+    # Filtrar pacientes
     pacientes = Paciente.objects.all()
     if run:
         pacientes = pacientes.filter(rut__icontains=run)
     if nombre:
-        pacientes = pacientes.filter(nombre__icontains=nombre)
+        pacientes = pacientes.filter(Q(nombre__icontains=nombre) | Q(apellido__icontains=nombre))
     if estado and estado != 'Todas':
         pacientes = pacientes.filter(estado=estado)
     if fecha_inicio and fecha_fin:
         pacientes = pacientes.filter(sesiones__fecha__range=[fecha_inicio, fecha_fin]).distinct()
 
-    # Obtener sesiones asociadas
+    # Paginación de pacientes
+    paciente_paginator = Paginator(pacientes, 30)
+    page_number_pacientes = request.GET.get('page_pacientes')
+    pacientes_page = paciente_paginator.get_page(page_number_pacientes)
+
+    # Filtrar y paginar sesiones
     sesiones = Sesion.objects.filter(paciente__in=pacientes).order_by('fecha')
+    sesion_paginator = Paginator(sesiones, 30)
+    page_number_sesiones = request.GET.get('page_sesiones')
+    sesiones_page = sesion_paginator.get_page(page_number_sesiones)
 
     # Calcular estadísticas
     estadisticas_estado = pacientes.values('estado').annotate(total=Count('id'))
-    total_pacientes = pacientes.count()
     asistencia_data = {
         "asistieron": sesiones.filter(asistencia=True).count(),
         "no_asistieron": sesiones.filter(asistencia=False).count(),
     }
 
-    # Generar gráfico en base64
-    grafico_base64 = generar_grafico(estadisticas_estado)
+    # Generar gráfico
+    grafico_base64 = generate_chart(estadisticas_estado)
+    print(f"Base64 del gráfico: {grafico_base64}")  # Depuración
 
-    # Renderizar plantilla con contexto
-    return render(request, 'core/estadisticas.html', {
-        "pacientes": pacientes,
-        "sesiones": sesiones,
+    # Contexto para la plantilla
+    context = {
+        "pacientes": pacientes_page,  # Pacientes paginados
+        "sesiones": sesiones_page,  # Sesiones paginadas
         "estadisticas_estado": estadisticas_estado,
         "asistencia_data": asistencia_data,
         "grafico_base64": grafico_base64,
@@ -487,32 +574,9 @@ def estadisticas(request):
         "estado": estado,
         "fecha_inicio": fecha_inicio,
         "fecha_fin": fecha_fin,
-    })
+    }
 
-def generate_chart(estadisticas_estado):
-    """
-    Genera un gráfico de barras basado en las estadísticas de estado de los pacientes.
-    Convierte el gráfico en formato base64 para usarlo en la plantilla HTML.
-    """
-    labels = [item['estado'] for item in estadisticas_estado]
-    values = [item['total'] for item in estadisticas_estado]
-
-    plt.figure(figsize=(8, 5))
-    plt.bar(labels, values, color=['#4CAF50', '#FFC107', '#FF5722'])  # Verde, amarillo, rojo
-    plt.xlabel('Estado')
-    plt.ylabel('Cantidad de Pacientes')
-    plt.title('Distribución de Pacientes por Estado')
-    plt.tight_layout()
-
-    # Convertir el gráfico a base64
-    buffer = io.BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    image_base64 = base64.b64encode(buffer.read()).decode('utf-8')
-    buffer.close()
-    plt.close()
-
-    return image_base64
+    return render(request, 'core/estadisticas.html', context)
 
 
 def generar_grafico(estadisticas_estado):
@@ -558,23 +622,14 @@ def generar_grafico(estadisticas_estado):
 
     return grafico_base64
 
-def buscar_paciente(request):
-    query = request.GET.get('query', '')
-    pacientes = Paciente.objects.filter(Q(rut__icontains=query) | Q(nombre__icontains=query))
-
-    # Retornar los datos en formato JSON
-    results = [
-        {"rut": paciente.rut, "nombre": f"{paciente.nombre} {paciente.apellido}"}
-        for paciente in pacientes
-    ]
-    return JsonResponse(results, safe=False)
-
-
 def generar_reporte_pdf(request):
+    """
+    Genera un PDF con el reporte de estadísticas basado en los filtros proporcionados.
+    """
     # Obtener filtros desde el request
     run = request.GET.get('run', '')
     nombre = request.GET.get('nombre', '')
-    estado = request.GET.get('estado', '')
+    estado = request.GET.get('estado', 'Todas')
     fecha_inicio = request.GET.get('fecha_inicio', '')
     fecha_fin = request.GET.get('fecha_fin', '')
 
@@ -583,7 +638,7 @@ def generar_reporte_pdf(request):
     if run:
         pacientes = pacientes.filter(rut__icontains=run)
     if nombre:
-        pacientes = pacientes.filter(nombre__icontains=nombre)
+        pacientes = pacientes.filter(Q(nombre__icontains=nombre) | Q(apellido__icontains=nombre))
     if estado and estado != 'Todas':
         pacientes = pacientes.filter(estado=estado)
     if fecha_inicio and fecha_fin:
@@ -597,12 +652,21 @@ def generar_reporte_pdf(request):
         "no_asistieron": sesiones.filter(asistencia=False).count(),
     }
 
+    # Generar gráfico solo si hay datos en `estadisticas_estado`
+    if estadisticas_estado.exists():
+        grafico_base64 = generate_chart(estadisticas_estado)
+    else:
+        grafico_base64 = None
+
     # Crear PDF usando plantilla
     template = get_template('core/reporte_pdf.html')
     context = {
         "estadisticas_estado": estadisticas_estado,
         "asistencia_data": asistencia_data,
         "total_pacientes": pacientes.count(),
+        "sesiones": sesiones,
+        "pacientes": pacientes,
+        "grafico_base64": grafico_base64,
         "run": run,
         "nombre": nombre,
         "estado": estado,
@@ -619,115 +683,49 @@ def generar_reporte_pdf(request):
         return HttpResponse('Hubo un error al generar el PDF', status=500)
     return response
 
-def descargar_informe(request):
-    pacientes = Paciente.objects.all()
-    sesiones = Sesion.objects.all()
 
-    # Preparar datos para el informe
-    context = {
-        'pacientes': pacientes,
-        'sesiones': sesiones,
+def generate_chart(estadisticas_estado):
+    """
+    Genera un gráfico de barras basado en las estadísticas de estado de los pacientes.
+    Convierte el gráfico en formato base64 para usarlo en el reporte PDF.
+    """
+    import matplotlib.pyplot as plt
+    import io
+    import base64
+
+    # Extraer estados y totales
+    estados = [item['estado'] for item in estadisticas_estado]
+    totales = [item['total'] for item in estadisticas_estado]
+
+    # Configuración del gráfico
+    plt.figure(figsize=(8, 5))  # Tamaño del gráfico
+    color_map = {
+        'En Proceso': '#FFC107',  # Amarillo
+        'No Terminado': '#FF5722',  # Rojo
+        'Terminado': '#4CAF50'     # Verde
     }
+    colores = [color_map.get(estado, '#000000') for estado in estados]  # Color por estado
 
-    # Renderizar la plantilla del PDF
-    template = render_to_string('core/informe.html', context)
+    # Definir el ancho de las barras para hacerlas más delgadas
+    bar_width = 0.4
 
-    # Crear el PDF
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="informe_pacientes.pdf"'
+    # Crear el gráfico de barras con barras delgadas
+    plt.bar(estados, totales, color=colores, edgecolor="black", width=bar_width)
 
-    pisa_status = pisa.CreatePDF(
-        template, dest=response
-    )
+    # Etiquetas y título del gráfico
+    plt.xlabel('Estado', fontsize=12)
+    plt.ylabel('Cantidad de Pacientes', fontsize=12)
+    plt.title('Distribución de Pacientes por Estado', fontsize=16, weight='bold')
 
-    if pisa_status.err:
-        return HttpResponse('Error al generar el PDF', status=500)
+    # Ajustar el diseño para evitar que los textos se solapen
+    plt.tight_layout()
 
-    return response
+    # Convertir el gráfico a base64 para incrustarlo en HTML o PDF
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    image_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    buffer.close()
+    plt.close()
 
-
-# Función para validar el RUT
-def agregar_paciente(request):
-    sesiones = []  # Sesiones dinámicas a mostrar en el formulario
-    errores = {}   # Errores específicos de los campos
-
-    if request.method == "POST":
-        if "actualizar_sesiones" in request.POST:
-            # Lógica para actualizar sesiones dinámicas
-            cantidad_sesiones = int(request.POST.get("cantidad_sesiones", 0))
-            for i in range(cantidad_sesiones):
-                sesiones.append({
-                    "index": i + 1,
-                    "fecha": "",
-                    "hora": "",
-                })
-            
-            # Devolver todos los campos previamente ingresados
-            return render(request, "core/ingreso_pacientes.html", {
-                "sesiones": sesiones,
-                "cantidad_sesiones": cantidad_sesiones,
-                "nombre": request.POST.get("nombre"),
-                "apellido": request.POST.get("apellido"),
-                "rut": request.POST.get("rut"),
-                "patologia": request.POST.get("patologia"),
-                "observaciones": request.POST.get("observaciones"),
-            })
-
-        # Datos del formulario
-        nombre = request.POST.get("nombre")
-        apellido = request.POST.get("apellido")
-        rut = request.POST.get("rut")
-        cantidad_sesiones = request.POST.get("cantidad_sesiones")
-        patologia = request.POST.get("patologia")
-        observaciones = request.POST.get("observaciones")
-
-        # Validación de nombre
-        if not re.match(r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$", nombre):
-            errores["nombre"] = "El nombre solo puede contener letras."
-
-        # Validación de apellido
-        if not re.match(r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$", apellido):
-            errores["apellido"] = "El apellido solo puede contener letras."
-
-        # Validación del RUT
-        if not validar_rut(rut):
-            errores["rut"] = "El RUN ingresado no es válido. Ejemplo: 12345678-K."
-
-        # Si hay errores, renderizar la página con mensajes de error
-        if errores:
-            return render(request, "core/ingreso_pacientes.html", {
-                "sesiones": sesiones,
-                "cantidad_sesiones": cantidad_sesiones,
-                "errores": errores,
-                "nombre": nombre,
-                "apellido": apellido,
-                "rut": rut,
-                "patologia": patologia,
-                "observaciones": observaciones,
-            })
-
-        # Crear el paciente
-        paciente = Paciente.objects.create(
-            nombre=nombre,
-            apellido=apellido,
-            rut=rut,
-            cantidad_sesiones=cantidad_sesiones,
-            patologia=patologia,
-            observaciones=observaciones,
-        )
-
-        # Crear las sesiones si hay datos dinámicos
-        for i in range(int(cantidad_sesiones)):
-            fecha = request.POST.get(f"fecha_{i + 1}")
-            hora = request.POST.get(f"hora_{i + 1}")
-            if fecha and hora:
-                Sesion.objects.create(
-                    paciente=paciente,
-                    fecha=fecha,
-                    hora=hora
-                )
-
-        messages.success(request, "Paciente agregado correctamente.")
-        return redirect("detalle_paciente", id=paciente.id)
-
-    return render(request, "core/ingreso_pacientes.html")
+    return image_base64

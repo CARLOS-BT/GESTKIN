@@ -4,6 +4,7 @@ from . import views
 from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
+    path('', views.redirect_to_login),  # Redirige a '/'
     path('login/', views.login_view, name='login'),  # Inicio de sesión personalizado
     path('logout/', LogoutView.as_view(), name='logout'),  # Cerrar sesión
     path('lista-pacientes/', views.lista_pacientes, name='lista_pacientes'),
@@ -18,8 +19,6 @@ urlpatterns = [
     path('guardar-asistencias/<int:paciente_id>/', views.guardar_asistencias, name='guardar_asistencias'),
     path("eliminar-sesion/<int:sesion_id>/", views.eliminar_sesion, name="eliminar_sesion"),
     path("estadisticas/", views.estadisticas, name="estadisticas"),
-    path("descargar-informe/", views.descargar_informe, name="descargar_informe"),
     path('estadisticas/reporte_pdf/', views.generar_reporte_pdf, name='generar_reporte_pdf'),
-    path('buscar-paciente/', views.buscar_paciente, name='buscar_paciente'),
-    path('editar-sesion/<int:sesion_id>/', views.editar_sesion, name='editar_sesion'),
+        
 ]

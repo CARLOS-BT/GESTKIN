@@ -16,43 +16,72 @@
     <p><strong>RUN:</strong> {{ run|default:"Todos" }}</p>
     <p><strong>Nombre:</strong> {{ nombre|default:"Todos" }}</p>
     <p><strong>Estado:</strong> {{ estado|default:"Todos" }}</p>
-    <p><strong>Rango de Fechas:</strong> {{ fecha_inicio|default:"No especificado" }} - {{ fecha_fin|default:"No especificado" }}</p>
+    <p><strong>Rango de Fechas:</strong> {{ fecha_inicio|default:"-" }} - {{ fecha_fin|default:"-" }}</p>
 
-    <h2>Resumen de Pacientes</h2>
+    <h2>Gráfico de Estados</h2>
+    {% if grafico_base64 %}
+        <img src="data:image/png;base64,{{ grafico_base64 }}" alt="Gráfico de Estados">
+    {% else %}
+        <p>No hay datos para generar el gráfico.</p>
+    {% endif %}
+
+    <h2>Tabla de Pacientes</h2>
     <table>
         <thead>
             <tr>
-                <th>Estado</th>
-                <th>Total Pacientes</th>
+                <th>Nombre Completo</th>
+                <th>RUT</th>
+                <th>Cantidad de Sesiones</th>
             </tr>
         </thead>
         <tbody>
-            {% for item in estadisticas_estado %}
+            {% for paciente in pacientes %}
             <tr>
-                <td>{{ item.estado }}</td>
-                <td>{{ item.total }}</td>
+                <td>{{ paciente.nombre }} {{ paciente.apellido }}</td>
+                <td>{{ paciente.rut }}</td>
+                <td>{{ paciente.sesiones.count }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No hay datos para mostrar.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <h2>Resumen de Asistencia</h2>
+    <h2>Sesiones de Pacientes</h2>
     <table>
         <thead>
             <tr>
+                <th>Nombre Completo</th>
+                <th>Patología</th>
+                <th>Fecha</th>
+                <th>Hora</th>
                 <th>Asistencia</th>
-                <th>Total</th>
+                <th>Comentario</th>
             </tr>
         </thead>
         <tbody>
+            {% for sesion in sesiones %}
             <tr>
-                <td>Asistieron</td>
-                <td>{{ asistencia_data.asistieron }}</td>
+                <td>{{ sesion.paciente.nombre }} {{ sesion.paciente.apellido }}</td>
+                <td>{{ sesion.paciente.patologia }}</td>
+                <td>{{ sesion.fecha }}</td>
+                <td>{{ sesion.hora }}</td>
+                <td>
+                    {% if sesion.asistencia %}
+                        Sí
+                    {% else %}
+                        No
+                    {% endif %}
+                </td>
+                <td>{{ sesion.comentario_asistencia }}</td>
             </tr>
+            {% empty %}
             <tr>
-                <td>No Asistieron</td>
-                <td>{{ asistencia_data.no_asistieron }}</td>
+                <td colspan="6">No hay sesiones para mostrar.</td>
             </tr>
+            {% endfor %}
         </tbody>
     </table>
 </body>

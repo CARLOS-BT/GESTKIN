@@ -1,21 +1,22 @@
 {% extends 'core/base.html' %}
+{% load custom_tags %}
 
 {% block content %}
 <div class="container mt-5" style="max-width: 1400px;">
     <h1 class="text-center mb-4">Estadísticas de Pacientes</h1>
 
     <!-- Filtros -->
-    <form method="GET" class="row g-3 mb-4 align-items-end">
+    <form method="GET" class="row g-3 mb-4">
         <div class="col-md-3">
-            <label for="nombre" class="form-label">Buscar por Nombre:</label>
+            <label for="nombre" class="form-label fw-bold">Buscar por Nombre:</label>
             <input type="text" id="nombre" name="nombre" value="{{ nombre }}" class="form-control" placeholder="Ej: Juan">
         </div>
         <div class="col-md-3">
-            <label for="run" class="form-label">Buscar por RUN:</label>
+            <label for="run" class="form-label fw-bold">Buscar por RUN:</label>
             <input type="text" id="run" name="run" value="{{ run }}" class="form-control" placeholder="Ej: 12345678-9">
         </div>
-        <div class="col-md-2">
-            <label for="estado" class="form-label">Filtrar por Estado:</label>
+        <div class="col-md-3">
+            <label for="estado" class="form-label fw-bold">Filtrar por Estado:</label>
             <select id="estado" name="estado" class="form-select">
                 <option value="Todas" {% if estado == "Todas" or not estado %}selected{% endif %}>Todas</option>
                 <option value="En Proceso" {% if estado == "En Proceso" %}selected{% endif %}>En Proceso</option>
@@ -24,20 +25,19 @@
             </select>
         </div>
         <div class="col-md-3">
-            <label for="fecha_inicio" class="form-label">Filtrar por Fecha:</label>
+            <label for="fecha_inicio" class="form-label fw-bold">Filtrar por Fecha:</label>
             <div class="input-group">
                 <input type="date" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio }}" class="form-control">
                 <input type="date" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin }}" class="form-control">
             </div>
         </div>
-        <div class="col-md-1">
-            <button type="submit" class="btn btn-primary w-100">Aplicar Filtros</button>
+        <div class="col-12 text-center mt-3">
+            <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
         </div>
     </form>
-   
 
     <!-- Botón para descargar informe -->
-    <div class="mb-3">
+    <div class="mb-4 text-center">
         <a href="{% url 'generar_reporte_pdf' %}?run={{ run }}&nombre={{ nombre }}&estado={{ estado }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}" 
            class="btn btn-success">
             Descargar Informe (PDF)
@@ -50,15 +50,19 @@
         <img src="data:image/png;base64,{{ grafico_base64 }}" alt="Gráfico de Estados" class="img-fluid">
     </div>
 
-    <!-- Tablas dinámicas -->
+    <!-- Tabla de Pacientes -->
     {% if pacientes %}
-        <h2>Tabla de Pacientes</h2>
-        <table class="table table-bordered mt-3">
+        <h2 class="mt-5">Tabla de Pacientes</h2>
+        <!-- Buscador para la tabla de pacientes -->
+        <input type="text" id="searchPacientes" placeholder="Buscar en la tabla de pacientes..." class="form-control mb-3">
+
+        <table class="table table-bordered mt-3" id="tablePacientes">
             <thead>
                 <tr>
-                    <th>Nombre</th>
+                    <th>Nombre Completo</th>
                     <th>RUT</th>
                     <th>Cantidad de Sesiones</th>
+                    <th>Estado</th>
                 </tr>
             </thead>
             <tbody>
@@ -67,16 +71,47 @@
                     <td>{{ paciente.nombre }} {{ paciente.apellido }}</td>
                     <td>{{ paciente.rut }}</td>
                     <td>{{ paciente.sesiones.count }}</td>
+                    <td>{{ paciente.estado }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
 
-        <h2>Sesiones de Pacientes</h2>
-        <table class="table table-bordered mt-3">
+        <!-- Paginación de Pacientes -->
+        <div class="d-flex justify-content-center mt-4">
+            <nav aria-label="Paginación">
+                <ul class="pagination">
+                    {% if pacientes.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% querystring page_pacientes=pacientes.previous_page_number %}">&laquo; Anterior</a>
+                    </li>
+                    {% endif %}
+                    {% for page_num in pacientes.paginator.page_range %}
+                    <li class="page-item {% if page_num == pacientes.number %}active{% endif %}">
+                        <a class="page-link" href="?{% querystring page_pacientes=page_num %}">{{ page_num }}</a>
+                    </li>
+                    {% endfor %}
+                    {% if pacientes.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% querystring page_pacientes=pacientes.next_page_number %}">Siguiente &raquo;</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    {% endif %}
+
+    <!-- Tabla de Sesiones -->
+    {% if sesiones %}
+        <h2 class="mt-5">Sesiones de Pacientes</h2>
+        <!-- Buscador para la tabla de sesiones -->
+        <input type="text" id="searchSesiones" placeholder="Buscar en la tabla de sesiones..." class="form-control mb-3">
+
+        <table class="table table-bordered mt-3" id="tableSesiones">
             <thead>
                 <tr>
-                    <th>N°</th>
+                    <th>Nombre Completo</th>
+                    <th>Patología</th>
                     <th>Fecha</th>
                     <th>Hora</th>
                     <th>Asistencia</th>
@@ -86,7 +121,8 @@
             <tbody>
                 {% for sesion in sesiones %}
                 <tr>
-                    <td>{{ forloop.counter }}</td>
+                    <td>{{ sesion.paciente.nombre }} {{ sesion.paciente.apellido }}</td>
+                    <td>{{ sesion.paciente.patologia }}</td>
                     <td>{{ sesion.fecha }}</td>
                     <td>{{ sesion.hora }}</td>
                     <td>
@@ -101,46 +137,56 @@
                 {% endfor %}
             </tbody>
         </table>
-    {% else %}
-        <h2>Resumen de Pacientes</h2>
-        <table class="table table-bordered mt-3">
-            <thead>
-                <tr>
-                    <th>Estado</th>
-                    <th>Total Pacientes</th>
-                    <th>Porcentaje</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in estadisticas_estado %}
-                <tr>
-                    <td>{{ item.estado }}</td>
-                    <td>{{ item.total }}</td>
-                    <td>{{ item.total|floatformat:2 }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
 
-        <h2>Resumen de Asistencia</h2>
-        <table class="table table-bordered mt-3">
-            <thead>
-                <tr>
-                    <th>Asistencia</th>
-                    <th>Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Asistieron</td>
-                    <td>{{ asistencia_data.asistieron }}</td>
-                </tr>
-                <tr>
-                    <td>No Asistieron</td>
-                    <td>{{ asistencia_data.no_asistieron }}</td>
-                </tr>
-            </tbody>
-        </table>
+        <!-- Paginación de Sesiones -->
+        <div class="d-flex justify-content-center mt-4">
+            <nav aria-label="Paginación">
+                <ul class="pagination">
+                    {% if sesiones.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% querystring page_sesiones=sesiones.previous_page_number %}">&laquo; Anterior</a>
+                    </li>
+                    {% endif %}
+                    {% for page_num in sesiones.paginator.page_range %}
+                    <li class="page-item {% if page_num == sesiones.number %}active{% endif %}">
+                        <a class="page-link" href="?{% querystring page_sesiones=page_num %}">{{ page_num }}</a>
+                    </li>
+                    {% endfor %}
+                    {% if sesiones.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% querystring page_sesiones=sesiones.next_page_number %}">Siguiente &raquo;</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
     {% endif %}
 </div>
+
+<!-- Scripts para búsqueda dinámica -->
+<script>
+    // Buscador dinámico para la tabla de pacientes
+    document.getElementById('searchPacientes').addEventListener('input', function() {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#tablePacientes tbody tr');
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            const match = Array.from(cells).some(cell => cell.textContent.toLowerCase().includes(filter));
+            row.style.display = match ? '' : 'none';
+        });
+    });
+
+    // Buscador dinámico para la tabla de sesiones
+    document.getElementById('searchSesiones').addEventListener('input', function() {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#tableSesiones tbody tr');
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            const match = Array.from(cells).some(cell => cell.textContent.toLowerCase().includes(filter));
+            row.style.display = match ? '' : 'none';
+        });
+    });
+</script>
 {% endblock %}

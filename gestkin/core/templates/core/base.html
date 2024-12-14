@@ -21,25 +21,27 @@
 <body>
     <!-- Barra de navegación -->
     <nav class="navbar navbar-expand-lg navbar-dark py-4" style="background-color: #3a0aac; height: 90px;">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
+        <div class="container-fluid">
             <!-- Menú desplegable en la esquina izquierda -->
-            <div class="dropdown">
-                <button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false" style="background-color: #3a0aac; border: none;">
-                    <i class="fas fa-bars"></i> Menú
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton" style="background-color: #3a0aac; color: white;">
-                    <li><a class="dropdown-item text-white" href="{% url 'lista_pacientes' %}"><i class="fas fa-list"></i> Lista de Pacientes</a></li>
-                    <li><a class="dropdown-item text-white" href="{% url 'ingreso_pacientes' %}"><i class="fas fa-user-plus"></i> Ingresar Nuevo Paciente</a></li>
-                    <li><a class="dropdown-item text-white" href="{% url 'estadisticas' %}"><i class="fas fa-chart-bar"></i> Estadísticas</a></li>
-                </ul>
-            </div>
+            <div class="d-flex align-items-center">
+                <div class="dropdown me-3">
+                    <button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false" style="background-color: #3a0aac; border: none;">
+                        <i class="fas fa-bars"></i> Menú
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton" style="background-color: #3a0aac; color: white;">
+                        <li><a class="dropdown-item text-white" href="{% url 'lista_pacientes' %}"><i class="fas fa-list"></i> Lista de Pacientes</a></li>
+                        <li><a class="dropdown-item text-white" href="{% url 'ingreso_pacientes' %}"><i class="fas fa-user-plus"></i> Ingresar Nuevo Paciente</a></li>
+                        <li><a class="dropdown-item text-white" href="{% url 'estadisticas' %}"><i class="fas fa-chart-bar"></i> Estadísticas</a></li>
+                    </ul>
+                </div>
 
-            <!-- Título centrado -->
-            <a class="navbar-brand fw-bold mx-auto text-center" 
-               style="font-family: 'Poppins', sans-serif; font-size: 2rem; letter-spacing: 0.1rem; color: #89CFF0;" 
-               href="{% url 'ingreso_pacientes' %}">
-               SISTEMA GESTKIN
-            </a>
+                <!-- Título cercano al menú -->
+                <a class="navbar-brand fw-bold text-white" 
+                   style="font-family: 'Poppins', sans-serif; font-size: 2rem; letter-spacing: 0.1rem; color: #89CFF0;" 
+                   href="{% url 'ingreso_pacientes' %}">
+                   SISTEMA GESTKIN
+                </a>
+            </div>
 
             <!-- Información del Usuario y Cerrar Sesión -->
             <div class="d-flex align-items-center">
@@ -50,7 +52,7 @@
                         <span id="currentDateTime"></span>
                     </div>
                     <small>
-                        Médico: <b>Laura Rodríguez</b> | Asistente: <b>Daniela Cifuentes</b>
+                        Kinésiologo: <b>Laura Rodríguez</b> | Asistente: <b>Daniela Cifuentes</b>
                     </small>
                 </div>
 

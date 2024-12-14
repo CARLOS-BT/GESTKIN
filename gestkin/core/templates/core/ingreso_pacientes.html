@@ -8,48 +8,74 @@
     <div class="w-100" style="max-width: 70%; font-family: 'Poppins', sans-serif;">
         <!-- Logo -->
         <div class="text-center mb-4">
-            <img src="{% static 'core/img/logo_gestkin.jpg' %}" alt="Logo" />
+            <img src="{% static 'core/img/logo_gestkin_2.jpg' %}" alt="Logo" style="max-width: 200px;" />
         </div>
-
+        
         <!-- Títulos -->
         <h1 class="text-center text-primary mb-4" style="font-size: 2.5rem; font-weight: bold;">SISTEMA GESTKIN</h1>
         <h2 class="text-center text-primary mb-4" style="font-size: 1.8rem;">Ingreso de Paciente</h2>
 
         <!-- Formulario -->
-        <form method="post" action="{% url 'ingreso_pacientes' %}" enctype="multipart/form-data" class="row g-4">
+        <form method="post" action="{% url 'ingreso_pacientes' %}" enctype="multipart/form-data" class="row g-4" id="form-ingreso-paciente">
             {% csrf_token %}
 
-            <!-- Nombre y Apellido -->
+            <!-- Nombre -->
             <div class="col-md-6">
-                <label for="id_nombre" class="form-label" style="font-size: 1.3rem;"><strong>Nombre del Paciente:</strong></label>
-                {{ form.nombre|add_class:"form-control form-control-lg" }}
-            </div>
-            <div class="col-md-6">
-                <label for="id_apellido" class="form-label" style="font-size: 1.3rem;"><strong>Apellido del Paciente:</strong></label>
-                {{ form.apellido|add_class:"form-control form-control-lg" }}
+                <label for="id_nombre" class="form-label"><strong>Nombre del Paciente:</strong></label>
+                <input type="text" id="id_nombre" name="nombre" class="form-control form-control-lg" value="{{ nombre }}">
+                {% if errores.nombre %}
+                <p class="text-danger small">{{ errores.nombre }}</p>
+                {% endif %}
             </div>
 
-            <!-- RUT y Cantidad de Sesiones -->
+            <!-- Apellido -->
             <div class="col-md-6">
-                <label for="id_rut" class="form-label" style="font-size: 1.3rem;"><strong>RUN:</strong></label>
-                {{ form.rut|add_class:"form-control form-control-lg" }}
+                <label for="id_apellido" class="form-label"><strong>Apellido del Paciente:</strong></label>
+                <input type="text" id="id_apellido" name="apellido" class="form-control form-control-lg" value="{{ apellido }}">
+                {% if errores.apellido %}
+                <p class="text-danger small">{{ errores.apellido }}</p>
+                {% endif %}
             </div>
+
+            <!-- RUT -->
             <div class="col-md-6">
-                <label for="cantidad_sesiones" class="form-label" style="font-size: 1.3rem;"><strong>Cantidad de Sesiones:</strong></label>
+                <label for="id_rut" class="form-label"><strong>RUN:</strong></label>
+                <input type="text" id="id_rut" name="rut" 
+                       class="form-control form-control-lg" 
+                       value="{{ rut }}" 
+                       pattern="\d{7,8}-[0-9Kk]" 
+                       title="Debe tener entre 7 y 8 dígitos, un guion y un dígito verificador (número o K)">
+                {% if errores.rut %}
+                <p class="text-danger small">{{ errores.rut }}</p>
+                {% endif %}
+            </div>
+                  
+
+            <!-- Cantidad de Sesiones -->
+            <div class="col-md-6">
+                <label for="cantidad_sesiones" class="form-label"><strong>Cantidad de Sesiones:</strong></label>
                 <div class="input-group">
                     <input type="number" name="cantidad_sesiones" value="{{ cantidad_sesiones }}" class="form-control form-control-lg" min="0">
-                    <button type="submit" name="actualizar_sesiones" class="btn btn-info px-4 py-2" style="font-size: 1.2rem;">Actualizar</button>
+                    <button type="submit" name="actualizar_sesiones" class="btn btn-info px-4 py-2">Actualizar</button>
                 </div>
             </div>
 
-            <!-- Observaciones y Patología -->
+            <!-- Observaciones -->
             <div class="col-md-6">
-                <label for="id_observaciones" class="form-label" style="font-size: 1.3rem;"><strong>Observaciones:</strong></label>
-                {{ form.observaciones|add_class:"form-control" }}
+                <label for="id_observaciones" class="form-label"><strong>Observaciones:</strong></label>
+                <textarea id="id_observaciones" name="observaciones" class="form-control">{{ observaciones }}</textarea>
+                {% if errores.observaciones %}
+                <p class="text-danger small">{{ errores.observaciones }}</p>
+                {% endif %}
             </div>
+
+            <!-- Patología -->
             <div class="col-md-6">
-                <label for="id_patologia" class="form-label" style="font-size: 1.3rem;"><strong>Patología:</strong></label>
-                {{ form.patologia|add_class:"form-control" }}
+                <label for="id_patologia" class="form-label"><strong>Patología:</strong></label>
+                <textarea id="id_patologia" name="patologia" class="form-control">{{ patologia }}</textarea>
+                {% if errores.patologia %}
+                <p class="text-danger small">{{ errores.patologia }}</p>
+                {% endif %}
             </div>
 
             <!-- Sesiones dinámicas -->
@@ -59,11 +85,11 @@
             </div>
             {% for sesion in sesiones %}
             <div class="col-md-6">
-                <label for="fecha_{{ sesion.index }}" class="form-label" style="font-size: 1.3rem;">Fecha de Sesión {{ sesion.index }}</label>
+                <label for="fecha_{{ sesion.index }}" class="form-label">Fecha de Sesión {{ sesion.index }}</label>
                 <input type="date" name="fecha_{{ sesion.index }}" id="fecha_{{ sesion.index }}" class="form-control form-control-lg" value="{{ sesion.fecha }}">
             </div>
             <div class="col-md-6">
-                <label for="hora_{{ sesion.index }}" class="form-label" style="font-size: 1.3rem;">Hora de Sesión {{ sesion.index }}</label>
+                <label for="hora_{{ sesion.index }}" class="form-label">Hora de Sesión {{ sesion.index }}</label>
                 <input type="time" name="hora_{{ sesion.index }}" id="hora_{{ sesion.index }}" class="form-control form-control-lg" value="{{ sesion.hora }}">
             </div>
             {% endfor %}
@@ -77,4 +103,5 @@
         </form>
     </div>
 </div>
+
 {% endblock %}
