@@ -10,15 +10,14 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
 
-    'gestkin.core',  # Usa la ruta completa para registrar la aplicación
+    'gestkin.core',  # ruta para registrar la aplicación
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    
+        
 ]
 
 MIDDLEWARE = [

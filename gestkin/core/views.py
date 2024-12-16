@@ -75,6 +75,26 @@ from .forms import PacienteForm
 from gestkin.core.utils import group_required  # Ajusta la ruta según tu proyecto
 
 
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from datetime import datetime, timedelta
+from .models import Paciente, Sesion
+from .forms import PacienteForm
+import re
+
+def group_required(*group_names):
+    """Decorator to check if the user belongs to any of the specified groups."""
+    def decorator(view_func):
+        def _wrapped_view(request, *args, **kwargs):
+            if request.user.groups.filter(name__in=group_names).exists():
+                return view_func(request, *args, **kwargs)
+            # Si el usuario no pertenece a ninguno de los grupos, mostrar mensaje de error
+            messages.error(request, "No tienes permisos para acceder a esta sección.")
+            return redirect(request.META.get('HTTP_REFERER', '/'))  # Redirige a la página anterior
+        return _wrapped_view
+    return decorator
+
 @login_required
 @group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def ingreso_pacientes(request):
@@ -100,7 +120,6 @@ def ingreso_pacientes(request):
             errores["observaciones"] = "Las observaciones solo pueden contener letras, números y espacios (máximo 100 caracteres)."
         if not re.match(r"^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]{1,100}$", patologia):
             errores["patologia"] = "La patología solo puede contener letras, números y espacios (máximo 100 caracteres)."
-
 
         # Manejar botón "Actualizar" para sesiones dinámicas
         if "actualizar_sesiones" in request.POST:
@@ -214,6 +233,18 @@ def calcular_digito_verificador(rut_sin_dv):
 
 
 
+def group_required(*group_names):
+    """Decorator to check if the user belongs to any of the specified groups."""
+    def decorator(view_func):
+        def _wrapped_view(request, *args, **kwargs):
+            if request.user.groups.filter(name__in=group_names).exists():
+                return view_func(request, *args, **kwargs)
+            # Si el usuario no pertenece a ninguno de los grupos, mostrar mensaje de error
+            messages.error(request, "No tienes permisos para acceder a esta sección.")
+            return redirect(request.META.get('HTTP_REFERER', '/'))  # Redirige a la página anterior
+        return _wrapped_view
+    return decorator
+
 @login_required  # Requiere que el usuario esté autenticado
 @group_required('grupo_kine', 'grupo_asistente')  # Solo Kinesiologo y Asistente pueden acceder
 def lista_pacientes(request):
@@ -251,7 +282,7 @@ from django.shortcuts import redirect
 
 def redirect_to_login(request):
     """Redirige a la página de inicio de sesión."""
-    return redirect('login')  # Asegúrate de que 'login' sea el name en tu URLconf
+    return redirect('login')  # nombre en tu URLconf
 
 
 """"
