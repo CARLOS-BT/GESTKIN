@@ -18,9 +18,13 @@ Requisitos del Sistema
 Python 3.2 o superior
 Dependencias listadas en requirements.txt
 Navegador web moderno
+
+
+
 Instalación
 Clonar el repositorio:
 git clone https://github.com/CARLOS-BT/GESTKIN.git
+
 Crear y activar entorno virtual:
 python -m venv venv
 source venv/bin/activate # En Windows: venv\Scripts\activate
